@@ -121,7 +121,7 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 {
   int opt;
 
-  while ( (opt=getopt(argc, argv, "m:d:e:f:M:b:t:")) != -1  )
+  while ( (opt=getopt(argc, argv, "m:d:e:f:M:b:t:K:s:")) != -1  )
     {
       switch(opt)
 	{
@@ -147,6 +147,12 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 	case 'b':
 	  params.baselineFileName = std::string(optarg);
 	  break;
+	case 'K':
+	  params.level = std::stoi(optarg);
+	  break;
+	case 's':
+	  params.shrinkageFactor = std::stod(optarg);
+	  break;
 	default:
 	  std::cout << "Usage: " << argv[0] << " "
 		    << "-f inputFile "
@@ -156,6 +162,8 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 			<< "[-t #threads] "
 			<< "[-d delta]"
 		    << "[-b baselineClusteringFile]"
+			<< "[-K baselevel]"
+			<< "[-s shrinkageFactor [0,1]]"
 		    << std::endl;
 	  exit(EXIT_FAILURE);
 	}

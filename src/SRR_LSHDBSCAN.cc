@@ -5,10 +5,14 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
                             double memoConstraint_,
                             bool benchmark_,
                             std::string benchName,
-                            size_t numberOfThreads_):delta(delta_),memoConstraint(memoConstraint_), numberOfThreads(numberOfThreads_) ,benchmark(benchmark_), benchStream(benchName)
+                            size_t numberOfThreads_,
+                            int level_,
+                            double shrinkageFactor_):delta(delta_),memoConstraint(memoConstraint_), 
+                              numberOfThreads(numberOfThreads_) ,benchmark(benchmark_), benchStream(benchName), 
+                              level(level_), shrinkageFactor(shrinkageFactor_)
 {
     setDataset(ds_);
-    setParams();
+    setParams();  
 
     pid = new pthread_t[numberOfThreads];
 
@@ -81,7 +85,8 @@ void SRR_LSHDBSCAN::setParams(){
 void SRR_LSHDBSCAN::initLevels(){
   std::cerr << "initting levels" << std::endl;
   for(size_t k = 0; k <= maxDepth; k++){
-    size_t repetitions = ceil(reps(k) * log(1/delta));
+    std::cerr << shrinkageFactor << std::endl;
+    size_t repetitions = ceil(reps(k) * log(1/delta) * shrinkageFactor);
     if(k == 0) repetitions = 1;
     std::cerr << k  << " " << reps(k) << " " << log(1/delta) << " " << repetitions; 
     std::vector<HashTable*> *levelK = new std::vector<HashTable*>();
@@ -98,7 +103,7 @@ void SRR_LSHDBSCAN::initLevels(){
 void SRR_LSHDBSCAN::initLevelsCorePoints(){
   //std::cerr << "initting levels" << std::endl;
   for(size_t k = 0; k <= maxDepth; k++){
-    size_t repetitions = ceil(reps(k) * log(1/delta));
+    size_t repetitions = ceil(reps(k) * log(1/delta) * shrinkageFactor);
     if(k == 0) repetitions = 1;
       //std::cerr << k  << " " << reps(k) << " " << log(1/delta) << " " << repetitions; 
       std::vector<HashTable*> *levelK = new std::vector<HashTable*>();
@@ -274,7 +279,10 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
         for (auto iter = task.begin; iter < task.end; iter++){
           //Performs the CP identityfication for each point that the thread is responsible for.
           point p = *iter;
-          int bestK = input->findBestLevel(p);
+          int bestK = input->level;
+          if (bestK == -1) {
+            bestK = input->findBestLevel(p);
+          } 
           std::unordered_set<point*> result_set; result_set.insert(&p);
           for(auto T = input->levels[bestK]->begin(); T != input->levels[bestK]->end(); T++){
             //Hash q with the hyperplanes of T
@@ -368,21 +376,21 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
     for(auto table = (*level)->begin(); table != (*level)->end(); table++ ){
       for(auto bucket: (*table)->myMap){
         size_t bucket_size = bucket.second.size(); 
-        totalWork_level += bucket_size * bucket_size;
+        totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
       }
       if(totalWork_level > minWork){
         break;
       }
     }
-    std::cout << "Level " << index << " has avg. work " << totalWork_level / reps(index) << " per table" << std::endl;
+    std::cout << "Level " << index << " has avg. work " << totalWork_level << " per table" << std::endl;
     if(totalWork_level < minWork){
       minWork = totalWork_level;
       bestlevel = index;
     }
     index++;
   }
-  std::cout << "what is going on what level do we choose? "<< bestlevel << std::endl; 
-  return index - 1;
+  std::cout << "Chosen level: " << bestlevel << std::endl; 
+  return bestlevel;
 }
 
 
@@ -574,6 +582,7 @@ void SRR_LSHDBSCAN::performClustering(){
 
   
   start = std::chrono::steady_clock::now();
+  auto total_start = start;
   populateHashTables_threaded();
   populationTasks.clear(); //How to ensure this happens after above function terminates?
   // populateHashTables();
@@ -640,7 +649,13 @@ void SRR_LSHDBSCAN::performClustering(){
 
   benchStream << "Merging: ";
   start = std::chrono::steady_clock::now(); 
-  size_t CPMergelevel = findCPMergingLevel(); 
+  size_t CPMergelevel;
+  if (level != -1) {
+    std::cout << "Using fixed level " << level << std::endl;
+    CPMergelevel = level;
+  } else {
+    CPMergelevel = findCPMergingLevel(); 
+  } 
   CPMergingTasks.reserve(reps(CPMergelevel)); 
   for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){
     CPMergingTasks.emplace_back(**table);
@@ -656,6 +671,7 @@ void SRR_LSHDBSCAN::performClustering(){
   stop = std::chrono::steady_clock::now();
   duration_relabelingData = stop - start;
   benchStream << duration_relabelingData.count() << std::endl;
+  benchStream << "Total: " << (stop - total_start).count() / 1e9 << std::endl;
 }
 
 //Depricated

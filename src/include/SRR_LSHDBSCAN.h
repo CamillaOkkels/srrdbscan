@@ -57,7 +57,9 @@ private:
     //Given as input
     dataset* ds = NULL;
     double memoConstraint = 0.0; //Giga bytes
-    double delta = 0.0; // between 0.0 and 0.5
+    double delta = 0.1; // between 0.0 and 0.5
+    int level = -1; // fix the level? -1 means unfixed.
+    double shrinkageFactor = 1.0;
     const bool benchmark = false;
     
     //Constructed at runtime
@@ -131,7 +133,8 @@ public:
     
 
     void introduceMe();
-    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes, bool benchmark, std::string benchName , size_t numberOfThreads = 2); //epsilon might not be needed for the class, just set the value globally like they did
+    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes, bool benchmark, std::string benchName , size_t numberOfThreads = 2, 
+        int level = -1, double shrinkageFactor=1.0); //epsilon might not be needed for the class, just set the value globally like they did
     void performClustering();
     std::ostream& getCorePoints(std::ostream&, char deli) const;
     std::ostream& getLabels(std::ostream&, char deli) const;

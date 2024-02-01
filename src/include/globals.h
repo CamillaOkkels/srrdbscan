@@ -42,6 +42,8 @@ struct SRRParameters{
   std::string baselineFileName;
   double memoConstraint;
   double delta = 0.1;
+  int level = -1;
+  double shrinkageFactor=1.0;
   size_t numberOfThreads = std::thread::hardware_concurrency();
 };
 

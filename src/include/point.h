@@ -103,6 +103,8 @@ class dataset
  public:
   size_t numberOfDimensions = 0;  
   std::vector<point> points;
+
+  std::string name;
   
   void readData(std::string);
   void readData_HDF5(std::string);

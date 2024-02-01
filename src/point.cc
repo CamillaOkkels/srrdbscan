@@ -79,6 +79,8 @@ void dataset::readData_HDF5(std::string fileName){
     }
 
   this->numberOfDimensions = points[0].features.size();
+
+  this->name = fileName.substr(fileName.find_last_of("/\\") + 1);
   bool first = true;
   for (const auto & point : points){
     if (this->numberOfDimensions != point.features.size())

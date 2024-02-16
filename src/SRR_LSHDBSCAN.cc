@@ -1,5 +1,7 @@
 #include <SRR_LSHDBSCAN.h>
 
+long g_finished = 0;
+
 SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_, 
                             double delta_,
                             double memoConstraint_,
@@ -19,6 +21,7 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
     //std::cerr << "depth: " << maxDepth << std::endl;
     initLevels();
     size_t numPoints = ds->points.size();
+    std::cerr << "data points " << numPoints << std::endl;
     size_t noBatches = 100;
     assert(numPoints>= noBatches);
     size_t stepsize = (numPoints + noBatches - 1) / noBatches; //ceil  
@@ -283,6 +286,9 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
           if (bestK == -1) {
             bestK = input->findBestLevel(p);
           } 
+          long comparisons = 0;
+          long truepoints = 0;
+          //std::cout << "identification on level " << bestK << std::endl;
           std::unordered_set<point*> result_set; result_set.insert(&p);
           for(auto T = input->levels[bestK]->begin(); T != input->levels[bestK]->end(); T++){
             //Hash q with the hyperplanes of T
@@ -296,7 +302,9 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
                   return hashFunc(p, h);
                 });      
             for(auto q : (*T)->myMap[hq]){
+              comparisons++;
               if(p.squaredEuclideanDistance(*q) <= epsilon){
+                truepoints++;
                 result_set.insert(q);
               }
             }
@@ -305,7 +313,12 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
               input->corePoints.push_back(&(*iter)); //todo: is this still needed?
               break;
             }
-          }          
+          }
+#ifdef SRR_PERFORMANCE
+          std::cout << "carried out " << comparisons << " comparisons on level " << bestK << " and found " << truepoints << " passing points. Resulted in " << result_set.size() << " points." << std::endl;
+#endif
+          g_finished++;
+          std::cout << "finished roughly " << g_finished << " points" << std::endl;          
           if(0 < result_set.size() && result_set.size() < minPts){
             input->possibleBorderPoints.push_back(&(*iter));
           }
@@ -337,7 +350,6 @@ size_t SRR_LSHDBSCAN::reps(size_t k){
 }
 
 size_t SRR_LSHDBSCAN::findBestLevel(point q){
-    return maxDepth;
     size_t k = 1, kbest = 0, w_kbest = ds->points.size();
     size_t L = reps(maxDepth); //we should be able to substitude L for max reps, since we dont get what L is;
     while(reps(k) <= std::min(L, w_kbest)){
@@ -358,6 +370,10 @@ size_t SRR_LSHDBSCAN::findBestLevel(point q){
           //Add |T[hash_T(q)]| to w_k
           w_k += 1 + (*T)->myMap[hq].size();
         }
+
+#ifdef SRR_PERFORMANCE
+        std::cout << "Work on level " << k << " is " << w_k << std::endl;
+#endif
 
         if(w_k < w_kbest){
           kbest = k; w_kbest = w_k;
@@ -382,14 +398,18 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
         break;
       }
     }
+#ifdef SRR_PERFORMANCE
     std::cout << "Level " << index << " has avg. work " << totalWork_level << " per table" << std::endl;
+#endif
     if(totalWork_level < minWork){
       minWork = totalWork_level;
       bestlevel = index;
     }
     index++;
   }
+#ifdef SRR_PERFORMANCE
   std::cout << "Chosen level: " << bestlevel << std::endl; 
+#endif
   return bestlevel;
 }
 

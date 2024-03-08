@@ -214,26 +214,28 @@ void point::link(point * p)
     parent_of_s2->label = NON_NOISE;
   
   if (parent_of_this->id == parent_of_s2->id)
-    {
+  {
       assert(parent_of_this == parent_of_s2); // debug assert
       return;
-    }
+  }
 
-  if (parent_of_this->id < parent_of_s2->id)
-    {
+  if (parent_of_this->weight <= parent_of_s2->weight)
+  {
       if (__sync_bool_compare_and_swap (&(parent_of_this->parent), NULL, parent_of_s2)==true)
-	{
-	  return;
-	}
-    }
+	    {
+        parent_of_s2->weight += parent_of_this->weight;
+	      return;
+	    }
+  }
 
-  if (parent_of_this->id > parent_of_s2->id)
-    {
+  if (parent_of_this->weight > parent_of_s2->weight)
+  {
       if (__sync_bool_compare_and_swap (&(parent_of_s2->parent), NULL, parent_of_this)==true)
-	{
-	  return;
-	}
-    }
+	    {
+        parent_of_this->weight += parent_of_s2->weight;
+	      return;
+	    }
+  }
 
   parent_of_this->link(parent_of_s2);
 }

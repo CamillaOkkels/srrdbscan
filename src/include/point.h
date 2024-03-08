@@ -16,6 +16,7 @@ class BasePoint
   bool normalized = false;
  public:
   size_t id = -1;
+  size_t weight = 1;
   std::vector<double> features;
 
   BasePoint();

@@ -73,7 +73,7 @@ void parseTheArguments(int argc, char* argv[], Parameters& params)
 	  break;
 	case 'e':
 	  epsilon_original = std::stod(optarg);
-	  epsilon = epsilon_original;
+	  epsilon = epsilon_original * epsilon_original;
 	  break;
 	case 't':
 	  params.numberOfThreads = std::stoi(optarg);

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <transformation.h>
 #include <globals.h>
+#include <PQ.h>
 #include <cmath>
 #include <unordered_set>
 #include <unordered_map>
@@ -221,6 +222,123 @@ void HashTable::identifyMergeTasks_V2()
     }
 }
 
+// void HashTable::mergeCorePoints(){
+// 	for(auto &bucket: myMap){ //
+// 		size_t n = bucket.second.size();
+
+// 		if (n == 0) {
+// 			continue;
+// 		}
+// 		long long m = 0;
+// 		long long necessary = 0;
+// 		std::cout << "Have to carry out merging task in bucket of size " << n << std::endl;
+		
+// 		std::unordered_set<point*> repr;
+// 		std::unordered_map<point*, std::vector<point*>> map;
+
+
+// 		// split up points in bucket by representatitve in UF data structure
+// 		for (size_t i = 0; i < n; i++) {
+// 			auto p = bucket.second[i]->findRoot();
+// 			repr.insert(p);
+// 			if (map.find(p) != map.end()) {
+// 				map[p].push_back(bucket.second[i]);
+// 			} else{
+// 				map[p] = std::vector<point*> {bucket.second[i]};
+// 			}
+// 		}
+
+
+// 		if (map.size() == 1) {
+// 		 	std::cout << "no work needs to be done in this bucket, all points are in the same cluster." << std::endl;
+// 		 	continue;
+// 		}
+
+// 		std::vector<point*> work;
+// 		std::move(repr.begin(), repr.end(), std::back_inserter(work));
+
+// 		// sort lists of equivalence classes to check by size, smaller first.
+// 		std::sort(work.begin(), work.end(), [&map] (point* a, point* b) {
+// 			return map[a].size() < map[b].size();
+// 		});
+
+
+
+// 		for (size_t i = 0; i < work.size(); i++) {
+// 			std::cout << i << std::endl;
+// 			int skipped = 0;
+// 			for (size_t j = i + 1; j < work.size(); j++) {
+// 				//std::cout << j << std::endl;
+// 				// all-to-all between EC i and EC j
+// 				auto list1 =  map[work[i]];
+// 				auto list2 = map[work[j]];
+// 				if (list1[0]->findRoot() == list2[0]->findRoot()) {
+// 					skipped += 1;
+// 					continue;
+// 				}
+// 				for (size_t k = 0; k < list1.size(); k++) {
+// 					bool linked = false;
+// 					for (size_t ell = 0; ell < list2.size(); ell++) {
+// 						m += 1;
+// 						auto p = list1[k];
+// 						auto q = list2[ell];
+// 						//std::cout << p->squaredEuclideanDistance(*q) << " " << epsilon << std::endl;
+// 						if (p->squaredEuclideanDistance(*q) <= epsilon) {
+// 							necessary +=1;
+// 							p->link(q);
+// 							linked = true;
+// 							break;
+// 						}
+// 					}
+// 					if (linked or (list1[0]->findRoot() == list2[0]->findRoot())) {
+// 						break;
+// 					}
+// 				}
+// 			}
+
+// 			std::cout << skipped / (double) (work.size() - i) << std::endl;
+
+// 			// check if more work needs to be done
+// 			auto p = map[work[i]][0]->findRoot();
+// 			bool done = true;
+// 			std::unordered_set<point*> visited;
+// 			for (size_t k = 0; k < work.size(); k++) {
+// 				//std::cout << k << std::endl;
+// 				visited.insert(map[work[k]][0]->findRoot());
+// 				if (p != map[work[k]][0]->findRoot()) {
+// 					//std::cout << i << "-th iteration done, still multiple ECs" << std::endl;
+// 					done = false;
+// 					//break;
+// 				}
+// 			}
+// 			std::cout << visited.size() << " ECs left" << std::endl; 
+// 			if (done) {
+// 				break;
+// 			}
+// 		}
+// 		// for(size_t i = 0; i < n; i++){
+// 		// 	for(size_t j = i+1; j < n; j++){
+// 		// 		if(bucket.second[i]->squaredEuclideanDistance(*bucket.second[j]) <= epsilon){
+// 		// 			m += 1;
+// 		// 			if (bucket.second[i]->findRoot() != bucket.second[j]->findRoot()) {
+// 		// 				necessary += 1;
+// 		// 			}
+// 		// 			bucket.second[i]->link(bucket.second[j]);
+// 		// 		}
+// 		// 	}
+// 		// }
+// 		std::cout << "statistics for bucket with " << map.size() << " keys:" ;
+// 		for (const auto& [key, value]: map) {
+// 			std::cout << value.size() << " ";
+// 		}
+// 		std::cout << std::endl;
+// 		int frac = double(m) / (n * (n + 1) / 2)  * 100;
+// 		std::cout << frac <<"% merges (" << necessary << " necessary merges carried out), " <<  
+// 		m << " merges have been carried out (" << n * (n + 1) / 2 << " pairs checked)" << std::endl;
+
+// 	}
+// }
+
 void HashTable::mergeCorePoints(){
 	for(auto &bucket: myMap){ //
 		size_t n = bucket.second.size();
@@ -230,10 +348,10 @@ void HashTable::mergeCorePoints(){
 		}
 		long long m = 0;
 		long long necessary = 0;
-		// std::cout << "Have to carry out merging task in bucket of size " << n << std::endl;
+		std::cout << "Have to carry out merging task in bucket of size " << n << std::endl;
 		
 		std::unordered_set<point*> repr;
-		std::unordered_map<point*, std::vector<point*>> map;
+		std::unordered_map<point*, std::vector<std::pair<size_t, point*>>> map;
 
 
 		// split up points in bucket by representatitve in UF data structure
@@ -241,73 +359,86 @@ void HashTable::mergeCorePoints(){
 			auto p = bucket.second[i]->findRoot();
 			repr.insert(p);
 			if (map.find(p) != map.end()) {
-				map[p].push_back(bucket.second[i]);
+				map[p].push_back(std::make_pair(i, bucket.second[i]));
 			} else{
-				map[p] = std::vector<point*> {bucket.second[i]};
+				map[p] = std::vector<std::pair<size_t, point*>> {std::make_pair(i, bucket.second[i])};
 			}
 		}
 
 
 		if (map.size() == 1) {
-		 	// std::cout << "no work needs to be done in this bucket, all points are in the same cluster." << std::endl;
+		 	std::cout << "no work needs to be done in this bucket, all points are in the same cluster." << std::endl;
 		 	continue;
 		}
 
-		std::vector<point*> work;
-		std::move(repr.begin(), repr.end(), std::back_inserter(work));
+		auto pq = better_priority_queue::updatable_priority_queue<size_t, int64_t>();
 
+		for (size_t i = 0; i < n; i++) {
+			auto p = bucket.second[i];
+			auto u = p->findRoot();
+			pq.push(i, -map[u].size());
+		}
 
-		// sort lists of equivalence classes to check by size, smaller first.
-		std::sort(work.begin(), work.end(), [&map] (point* a, point* b) {
-			return map[a].size() > map[b].size();
-		});
+		size_t different_clusters = map.size();
+		int rounds = 0;
 
-		for (size_t i = 0; i < work.size(); i++) {
-			for (size_t j = i + 1; j < work.size(); j++) {
-				// all-to-all between EC i and EC j
-				auto list1 =  map[work[i]];
-				auto list2 = map[work[j]];
-				if (list1[0]->findRoot() == list2[0]->findRoot()) {
-					continue;
-				}
-				for (size_t k = 0; k < list1.size(); k++) {
-					bool linked = false;
-					for (size_t ell = 0; ell < list2.size(); ell++) {
-						m += 1;
-						auto p = list1[k];
-						auto q = list2[ell];
+		while (pq.size() > 0 && different_clusters > 0) {
+			rounds += 1;
+			std::cout << "Currently in round " << rounds << std::endl;
+			//std::cout << "Working on point " << pq.top().key << " with prio " << pq.top().priority << std::endl;
+			std::cout << "There are " << map.size() << " clusters left" << std::endl;
+			auto p = bucket.second[pq.pop_value().key];
+			auto u = p->findRoot();
+
+			std::vector<point*> remove_list;
+
+			int ecs_inspected = 0;
+
+			for (const auto & [key, value]: map) {
+				if (key != u) {
+					for (const auto & point: map[key]) {
+						auto q = point.second;
+
 						if (p->squaredEuclideanDistance(*q) <= epsilon) {
-							necessary +=1;
 							p->link(q);
-							linked = true;
+							remove_list.push_back(key);
 							break;
 						}
 					}
-					if (linked) {
-						break;
-					}
+					//std::cout << ++ecs_inspected << std::endl;
 				}
 			}
+
+			//std::cout << "carrying out merge jobs" << std::endl;
+
+			if (remove_list.size() > 0) {
+				for (const auto& key: remove_list) {
+					// merge ECs
+					different_clusters--;
+					std::move(map[key].begin(), map[key].end(), std::back_inserter(map[u]));
+					map.erase(key);
+				}
+				for (const auto& q: map[u]) {
+					if (q.second != p) {
+						pq.update(q.first, -map[u].size());
+					}
+				}
+
+			}
+			//std::cout << different_clusters << std::endl;
+
+
+	
 		}
-		// for(size_t i = 0; i < n; i++){
-		// 	for(size_t j = i+1; j < n; j++){
-		// 		if(bucket.second[i]->squaredEuclideanDistance(*bucket.second[j]) <= epsilon){
-		// 			m += 1;
-		// 			if (bucket.second[i]->findRoot() != bucket.second[j]->findRoot()) {
-		// 				necessary += 1;
-		// 			}
-		// 			bucket.second[i]->link(bucket.second[j]);
-		// 		}
-		// 	}
-		// }
-		// std::cout << "statistics for bucket with " << map.size() << " keys:" ;
-		// for (const auto& [key, value]: map) {
-		// 	std::cout << value.size() << " ";
-		// }
-		// std::cout << std::endl;
-		// int frac = double(m) / (n * (n + 1) / 2)  * 100;
-		// std::cout << frac <<"% merges (" << necessary << " necessary merges carried out), " <<  
-		// m << " merges have been carried out (" << n * (n + 1) / 2 << " pairs checked)" << std::endl;
+
+		std::cout << "statistics for bucket with " << map.size() << " keys:" ;
+		for (const auto& [key, value]: map) {
+			std::cout << value.size() << " ";
+		}
+		std::cout << std::endl;
+		int frac = double(m) / (n * (n + 1) / 2)  * 100;
+		std::cout << frac <<"% merges (" << necessary << " necessary merges carried out), " <<  
+		m << " merges have been carried out (" << n * (n + 1) / 2 << " pairs checked)" << std::endl;
 
 	}
 }

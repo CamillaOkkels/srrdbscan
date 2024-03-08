@@ -2,6 +2,8 @@
 
 long g_finished = 0;
 
+//#define SRR_PERFORMANCE
+
 SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_, 
                             double delta_,
                             double memoConstraint_,
@@ -302,6 +304,8 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
                   return hashFunc(p, h);
                 });      
             for(auto q : (*T)->myMap[hq]){
+              if (result_set.size() >= minPts)
+                break;
               comparisons++;
               if(p.squaredEuclideanDistance(*q) <= epsilon){
                 truepoints++;
@@ -659,7 +663,7 @@ void SRR_LSHDBSCAN::performClustering(){
   }
   bpIdentificationTasks.emplace_back(starting, this->possibleBorderPoints.end());
   
-  identifyBorderPoints_threaded();
+  //identifyBorderPoints_threaded();
   stop = std::chrono::steady_clock::now();  
   duration_identifyingBorderPoints = stop - start;
   benchStream << duration_identifyingBorderPoints.count() << std::endl;

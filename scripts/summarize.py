@@ -1,17 +1,23 @@
+import numpy as np 
+from collections import Counter
 import h5py
-from sklearn.metrics import rand_score
 import sys
 
 fn = sys.argv[1]
-gn = sys.argv[2]
+f = h5py.File(fn, 'r')
+arr = np.array(f['grp']['labels'])
+f.close()
 
-print(fn.split("_"))
+c = Counter(arr)
 
-eps = int(fn.split("_")[4])
-minPts = int(fn.split("_")[6])
+n = len(arr)
+c = dict(c)
+print(c)
+max_size = max(c.values())
+num_clusters = len(c)
+num_border = c.get(-1, 0)
+frac_largest = max_size / n
 
-labels_pred = h5py.File(fn)['grp']['labels']
-labels_true = h5py.File(gn)[f'eps={eps}, minPts={minPts}']['clustering_labels']
-
-print(rand_score(labels_true, labels_pred))
-
+print(f'Summary for {fn}')
+print(f"n = {n}, number of clusters = {num_clusters}, number of border points = {num_border}")
+print(f"Largest cluster has {max_size} points, accounting for {100 * frac_largest}%")

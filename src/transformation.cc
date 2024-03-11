@@ -364,7 +364,9 @@ void HashTable::mergeCorePoints(){
 		}
 		long long m = 0;
 		long long necessary = 0;
+#ifdef SRR_DEBUG
 		std::cout << "Have to carry out merging task in bucket of size " << n << std::endl;
+#endif
 		
 		std::unordered_set<point*> repr;
 		std::unordered_map<point*, std::vector<std::pair<size_t, point*>>> map;
@@ -383,7 +385,9 @@ void HashTable::mergeCorePoints(){
 
 
 		if (map.size() == 1) {
+#ifdef SRR_DEBUG
 		 	std::cout << "no work needs to be done in this bucket, all points are in the same cluster." << std::endl;
+#endif
 		 	continue;
 		}
 
@@ -400,9 +404,11 @@ void HashTable::mergeCorePoints(){
 
 		while (pq.size() > 0 && different_clusters > 0) {
 			rounds += 1;
+#ifdef SRR_DEBUG
 			std::cout << "Currently in round " << rounds << std::endl;
 			//std::cout << "Working on point " << pq.top().key << " with prio " << pq.top().priority << std::endl;
 			std::cout << "There are " << map.size() << " clusters left" << std::endl;
+#endif
 			auto p = bucket.second[pq.pop_value().key];
 			auto u = p->findRoot();
 
@@ -447,6 +453,7 @@ void HashTable::mergeCorePoints(){
 	
 		}
 
+#ifdef SRR_DEBUG
 		std::cout << "statistics for bucket with " << map.size() << " keys:" ;
 		for (const auto& [key, value]: map) {
 			std::cout << value.size() << " ";
@@ -455,7 +462,7 @@ void HashTable::mergeCorePoints(){
 		int frac = double(m) / (n * (n + 1) / 2)  * 100;
 		std::cout << frac <<"% merges (" << necessary << " necessary merges carried out), " <<  
 		m << " merges have been carried out (" << n * (n + 1) / 2 << " pairs checked)" << std::endl;
-
+#endif
 	}
 }
 

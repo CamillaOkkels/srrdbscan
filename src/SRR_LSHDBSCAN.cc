@@ -329,7 +329,7 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
 #endif
           g_finished++;
           if (g_finished % 10000 == 0) {
-            std::cout << "finished roughly " << g_finished << " points" << std::endl;
+            std::cout << "finished roughly " << g_finished << " points" << std::endl;          
           }
           if(0 < result_set.size() && result_set.size() < minPts){
             input->possibleBorderPoints.push_back(&(*iter));

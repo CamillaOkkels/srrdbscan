@@ -8,8 +8,14 @@
 #include <highfive/H5File.hpp>
 #include <highfive/H5DataSet.hpp>
 #include <highfive/H5DataSpace.hpp>
+
 #define NOISE -1
 #define NON_NOISE -2
+
+#define UH_PRIME_DEFAULT 4294967291U
+
+extern std::vector<uint64_t> HASH;
+
 
 class BasePoint
 {
@@ -53,7 +59,7 @@ class point : public BasePoint
   point* parent = NULL;
   int label = NOISE;
   bool corePoint = false;
-  
+    
  public:
   using BasePoint::BasePoint;
 
@@ -77,6 +83,20 @@ class HashedPoint : public BasePoint
  public:
   std::vector<int> features;
   bool operator == (const HashedPoint & p) const;
+
+  uint32_t combine() const {
+    uint64_t h = 0;
+
+    for (int i = 0; i < features.size(); i++) {
+      h = h + (uint64_t)features[i] * HASH[i];
+      h = (h & 4294967295U) + 5 * (h >> 32);
+      if (h >= UH_PRIME_DEFAULT) {
+        h = h - UH_PRIME_DEFAULT;
+      }
+    }
+
+    return h;
+  }
 };
 /*
 namespace std

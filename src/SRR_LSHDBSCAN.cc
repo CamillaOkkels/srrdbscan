@@ -20,6 +20,12 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
 
     pid = new pthread_t[numberOfThreads];
 
+    //initialize hashes
+
+	  for (int i = 0; i < 10; i++) {
+		  HASH.push_back(gen.getHashCoeff());
+	  }
+
     //std::cerr << "depth: " << maxDepth << std::endl;
     initLevels();
     size_t numPoints = ds->points.size();
@@ -247,14 +253,14 @@ void* SRR_LSHDBSCAN::bpIdentifycation_thread(void* inputArg){
             HashedPoint hq;
             if(outerBreak)break;
             std::transform(
-                (*T)->hyperplanes.cbegin(), 
-                (*T)->hyperplanes.cend(),
-                std::back_inserter(hq.features),
-                [&p](const Hyperplane &h) -> double
-                {
+            (*T)->hyperplanes.cbegin(), 
+            (*T)->hyperplanes.cend(),
+            std::back_inserter(hq.features),
+            [&p](const Hyperplane &h) -> double
+            {
                   return hashFunc(p, h);
-                });      
-            for(auto q : (*T)->myMap[hq]){
+            });      
+            for(auto q : (*T)->hashTable[hq.combine()]){
               if(p.squaredEuclideanDistance(*q) <= epsilon){//Since only CP are part of the tables we know p is a borderPoint
                 (*iter)->link(q);
                 outerBreak = true;
@@ -302,8 +308,8 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
                 [&p](const Hyperplane &h) -> double
                 {
                   return hashFunc(p, h);
-                });      
-            for(auto q : (*T)->myMap[hq]){
+                }); 
+            for(auto q : (*T)->hashTable[hq.combine()]){     
               if (result_set.size() >= minPts)
                 break;
               comparisons++;
@@ -363,16 +369,16 @@ size_t SRR_LSHDBSCAN::findBestLevel(point q){
           //Hash q with the hyperplanes of T
           HashedPoint hq;
           std::transform(
-              (*T)->hyperplanes.cbegin(), 
-              (*T)->hyperplanes.cend(),
-              std::back_inserter(hq.features),
-              [&q](const Hyperplane &h) -> double
-              {
+          (*T)->hyperplanes.cbegin(), 
+          (*T)->hyperplanes.cend(),
+          std::back_inserter(hq.features),
+          [&q](const Hyperplane &h) -> double
+          {
                 return hashFunc(q, h);
-              });
-
+          });
+          
           //Add |T[hash_T(q)]| to w_k
-          w_k += 1 + (*T)->myMap[hq].size();
+          w_k += 1 + (*T)->hashTable[hq.combine()].size();
         }
 
 #ifdef SRR_PERFORMANCE
@@ -394,7 +400,7 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
   for(auto level = levels.begin(); level != levels.end(); level++){
     size_t totalWork_level = 0;
     for(auto table = (*level)->begin(); table != (*level)->end(); table++ ){
-      for(auto bucket: (*table)->myMap){
+      for(auto bucket: (*table)->hashTable){
         size_t bucket_size = bucket.second.size(); 
         totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
       }
@@ -431,16 +437,16 @@ std::ostream& SRR_LSHDBSCAN::getWorkPoint(std::ostream& stream,char deli, point 
         //Hash q with the hyperplanes of T
         HashedPoint hq;
         std::transform(
-            (*T)->hyperplanes.cbegin(), 
-            (*T)->hyperplanes.cend(),
-            std::back_inserter(hq.features),
-            [&q](const Hyperplane &h) -> double
-            {
+        (*T)->hyperplanes.cbegin(), 
+        (*T)->hyperplanes.cend(),
+        std::back_inserter(hq.features),
+        [&q](const Hyperplane &h) -> double
+        {
               return hashFunc(q, h);
-            });
-
+        });
+        
         //Add |T[hash_T(q)]| to w_k
-        w_k += 1 + (*T)->myMap[hq].size();
+        w_k += 1 + (*T)->hashTable[hq.combine()].size();
       }
       stream << w_k << deli;
       k++;
@@ -461,16 +467,16 @@ std::vector<size_t> SRR_LSHDBSCAN::getWorkPoint(point q){
         //Hash q with the hyperplanes of T
         HashedPoint hq;
         std::transform(
-            (*T)->hyperplanes.cbegin(), 
-            (*T)->hyperplanes.cend(),
-            std::back_inserter(hq.features),
-            [&q](const Hyperplane &h) -> double
-            {
+        (*T)->hyperplanes.cbegin(), 
+        (*T)->hyperplanes.cend(),
+        std::back_inserter(hq.features),
+        [&q](const Hyperplane &h) -> double
+        {
               return hashFunc(q, h);
-            });
+        });
 
-        //Add |T[hash_T(q)]| to w_k
-        w_k += 1 + (*T)->myMap[hq].size();
+                //Add |T[hash_T(q)]| to w_k
+        w_k += 1 + (*T)->hashTable[hq.combine()].size();
       }
       totalWork.push_back(w_k);
       k++;
@@ -513,15 +519,15 @@ void SRR_LSHDBSCAN::identifyCorePoints(){
           //Hash q with the hyperplanes of T
           HashedPoint hq;
           std::transform(
-              (*T)->hyperplanes.cbegin(), 
-              (*T)->hyperplanes.cend(),
-              std::back_inserter(hq.features),
-              [&p](const Hyperplane &h) -> double
-              {
+          (*T)->hyperplanes.cbegin(), 
+          (*T)->hyperplanes.cend(),
+          std::back_inserter(hq.features),
+          [&p](const Hyperplane &h) -> double
+          {
                 return hashFunc(p, h);
-              });
-      
-          for(auto q : (*T)->myMap[hq]){
+          });
+
+          for(auto q : (*T)->hashTable[hq.combine()]){
             if(p.squaredEuclideanDistance(*q) <= epsilon){
               result_set.insert(q);
             }

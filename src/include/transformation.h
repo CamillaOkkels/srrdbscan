@@ -3,6 +3,7 @@
 
 #include <point.h>
 #include <randomGen.h>
+#include <unordered_map>
 #include "tbb/concurrent_unordered_map.h"
 #include "tbb/concurrent_vector.h"
 
@@ -74,7 +75,10 @@ public:
   HashTable(dataset*, std::string&);
   
   std::vector<Hyperplane> hyperplanes;
+  std::unordered_map<point*, uint32_t> hashes;
   tbb::concurrent_unordered_map<HashedPoint, tbb::concurrent_vector<point*>, MyHasher> myMap;
+
+  tbb::concurrent_unordered_map<uint64_t, tbb::concurrent_vector<point*>> hashTable;
 
   std::vector<CoreBucket> coreBuckets;
   std::vector<std::pair<point *, point *>> mergeTasks;

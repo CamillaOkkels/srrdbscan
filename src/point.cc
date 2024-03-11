@@ -6,6 +6,8 @@
 #include <cassert>
 #include <iomanip>
 
+std::vector<uint64_t> HASH;
+
 BasePoint::BasePoint()
 {}
 

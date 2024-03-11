@@ -29,10 +29,11 @@ HashTable::HashTable(dataset* ds_,
 void HashTable::populateHashTable()
 {
   assert(ds != NULL);
-
+  
+  HashedPoint hashedPoint;
+  hashedPoint.features.reserve(hyperplanes.size());
   for (auto & point : ds->points)
     {
-      HashedPoint hashedPoint;
 
       std::transform(hyperplanes.cbegin(), hyperplanes.cend(),
 		     std::back_inserter(hashedPoint.features),
@@ -40,7 +41,12 @@ void HashTable::populateHashTable()
 		     {
 		       return hashFunc(point, h);
 		     });
-      myMap[hashedPoint].push_back(&point);
+    //   myMap[hashedPoint].push_back(&point);
+	  auto hash = hashedPoint.combine();
+	  //std::cout << hash << std::endl;
+	  //hashes[&point] = hash;
+	  hashedPoint.features.clear();
+	  hashTable[hash].push_back(&point);
     }
 }
 
@@ -49,11 +55,13 @@ void HashTable::populateHashTable(std::vector<point>::iterator begin,
 {
   assert((end - begin) > 0);
 
+  HashedPoint hashedPoint;
+  hashedPoint.features.reserve(hyperplanes.size());
+
   for (std::vector<point>::iterator pointIter = begin;
        pointIter < end;
        pointIter++)
     {
-      HashedPoint hashedPoint; hashedPoint.features.reserve(numberOfHyperplanes);
 
       std::transform(hyperplanes.cbegin(), hyperplanes.cend(),
 		     std::back_inserter(hashedPoint.features),
@@ -61,7 +69,10 @@ void HashTable::populateHashTable(std::vector<point>::iterator begin,
 		     {
 		       return hashFunc(*pointIter, h);
 		     });
-      myMap[hashedPoint].push_back(&(*pointIter));
+    	auto hash = hashedPoint.combine();
+	 	hashedPoint.features.clear();
+    //   myMap[hashedPoint].push_back(&(*pointIter));
+        hashTable[hash].push_back(&(*pointIter));
     }
 }
 //This is added by outsiders (not from the original IPLSH papar)
@@ -70,11 +81,11 @@ void HashTable::populateHashTable(tbb::concurrent_vector<point*>::iterator begin
 {
   assert((end - begin) > 0);
 
+  HashedPoint hashedPoint; hashedPoint.features.reserve(numberOfHyperplanes);
   for (tbb::concurrent_vector<point*>::iterator pointIter = begin;
        pointIter < end;
        pointIter++)
     {
-      HashedPoint hashedPoint; hashedPoint.features.reserve(numberOfHyperplanes);
 
       std::transform(hyperplanes.cbegin(), hyperplanes.cend(),
 		     std::back_inserter(hashedPoint.features),
@@ -82,7 +93,12 @@ void HashTable::populateHashTable(tbb::concurrent_vector<point*>::iterator begin
 		     {
 		       return hashFunc(**pointIter, h);
 		     });
-      myMap[hashedPoint].push_back(*pointIter);
+
+	    auto hash = hashedPoint.combine();
+	  	//(*pointIter)->save_hash((uint64_t) this, hash);
+	 	hashedPoint.features.clear();
+      //myMap[hashedPoint].push_back(*pointIter);
+        hashTable[hash].push_back(*pointIter);
     }
 }
 
@@ -223,7 +239,7 @@ void HashTable::identifyMergeTasks_V2()
 }
 
 // void HashTable::mergeCorePoints(){
-// 	for(auto &bucket: myMap){ //
+// 	for(auto &bucket: hashTable){ //
 // 		size_t n = bucket.second.size();
 
 // 		if (n == 0) {
@@ -340,7 +356,7 @@ void HashTable::identifyMergeTasks_V2()
 // }
 
 void HashTable::mergeCorePoints(){
-	for(auto &bucket: myMap){ //
+	for(auto &bucket: hashTable){ //
 		size_t n = bucket.second.size();
 
 		if (n == 0) {
@@ -487,17 +503,17 @@ void HashTable::identifyAndPerformMergeTasks()
 
 void HashTable::initializeHashTable(size_t numberOfHyperplanes_)
 {
-  for (size_t i = 0; i < numberOfHyperplanes_; i++)
-    {
-      Hyperplane h;
-
-      for (size_t d = 0; d < ds->numberOfDimensions; d++)
+  	for (size_t i = 0; i < numberOfHyperplanes_; i++)
 	{
-	  h.features.push_back(gen->getRandVal());
-	}
+      	Hyperplane h;
 
-      //h.normalize(false);/*without aux dimension*/
-      hyperplanes.push_back(h);
+      	for (size_t d = 0; d < ds->numberOfDimensions; d++)
+		{
+	  		h.features.push_back(gen->getRandVal());
+		}
+
+      	//h.normalize(false);/*without aux dimension*/
+      	hyperplanes.push_back(h);
     }
 }
 

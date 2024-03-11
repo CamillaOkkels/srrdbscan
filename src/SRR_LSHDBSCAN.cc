@@ -639,63 +639,68 @@ void SRR_LSHDBSCAN::performClustering(){
   }
   levels.resize(0);
   std::cout << "number of core points: " << corePoints.size() << std::endl;
+
+  if (corePoints.size() > 0) {
   
-  //construct new SRR with only the Core Points
-  benchStream << "Populating tables with only CP:\t" << std::flush;
-  
-  start = std::chrono::steady_clock::now();  
-  initLevelsCorePoints();
-  benchStream << "initted" << std::endl;
-  populateCorePoints_threaded();
-  stop = std::chrono::steady_clock::now();
-  duration_populatingHashTables_CP = stop - start;
-  benchStream << duration_populatingHashTables_CP.count() << std::endl;
+    //construct new SRR with only the Core Points
+    benchStream << "Populating tables with only CP:\t" << std::flush;
+    
+    start = std::chrono::steady_clock::now();  
+    initLevelsCorePoints();
+    benchStream << "initted" << std::endl;
+    populateCorePoints_threaded();
+    stop = std::chrono::steady_clock::now();
+    duration_populatingHashTables_CP = stop - start;
+    benchStream << duration_populatingHashTables_CP.count() << std::endl;
+
+    benchStream << "Number of possibleBorderPoints: \t" << possibleBorderPoints.size() << std::endl;
 
 
-  //see if any possible border point is within reach of a CP;
-  //Link a border Point to only 1 CP (since it should not collapse 2 clusters into 1)
-  
-  benchStream << "Number of possibleBorderPoints: \t" << possibleBorderPoints.size() << std::endl;
-  benchStream << "Identifying border points: ";
-  start = std::chrono::steady_clock::now();  
-  size_t numPoints = possibleBorderPoints.size();
-  size_t noBatches = std::min(numberOfThreads, numPoints);
-  size_t stepsize = (numPoints + noBatches - 1) / noBatches; //ceil  
-  cpIdentifycationTasks.reserve(noBatches);
-  tbb::concurrent_vector<point*>::iterator starting     =  this->possibleBorderPoints.begin();
+    //see if any possible border point is within reach of a CP;
+    //Link a border Point to only 1 CP (since it should not collapse 2 clusters into 1)
+    if (possibleBorderPoints.size() > 0) { 
+      benchStream << "Identifying border points: ";
+      start = std::chrono::steady_clock::now();  
+      size_t numPoints = possibleBorderPoints.size();
+      size_t noBatches = std::min(numberOfThreads, numPoints);
+      size_t stepsize = (numPoints + noBatches - 1) / noBatches; //ceil  
+      cpIdentifycationTasks.reserve(noBatches);
+      tbb::concurrent_vector<point*>::iterator starting     =  this->possibleBorderPoints.begin();
 
-  for(size_t i  = 0; i < (noBatches-1); i++){ //current idea is just to split the work equally over all available threads.
-    bpIdentificationTasks.emplace_back(starting, starting + stepsize);
-    starting     += stepsize;
-    //IFAIK starting going over end should be fine since this is checked in the threads work
+      for(size_t i  = 0; i < (noBatches-1); i++){ //current idea is just to split the work equally over all available threads.
+        bpIdentificationTasks.emplace_back(starting, starting + stepsize);
+        starting     += stepsize;
+        //IFAIK starting going over end should be fine since this is checked in the threads work
+      }
+      bpIdentificationTasks.emplace_back(starting, this->possibleBorderPoints.end());
+      
+      //identifyBorderPoints_threaded();
+      stop = std::chrono::steady_clock::now();  
+      duration_identifyingBorderPoints = stop - start;
+      benchStream << duration_identifyingBorderPoints.count() << std::endl;
+    }
+
+    //Union CP using the new multi level structure (only contains Core points)
+    //Make tasks (select level based on sum of bucket sizes squared)
+
+    benchStream << "Merging: ";
+    start = std::chrono::steady_clock::now(); 
+    size_t CPMergelevel;
+    if (level != -1) {
+      std::cout << "Using fixed level " << level << std::endl;
+      CPMergelevel = level;
+    } else {
+      CPMergelevel = findCPMergingLevel(); 
+    } 
+    CPMergingTasks.reserve(reps(CPMergelevel)); 
+    for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){
+      CPMergingTasks.emplace_back(**table);
+    }  
+    CPMerging_threaded();
+    stop = std::chrono::steady_clock::now();
+    duration_Merging = stop - start;
+    benchStream << duration_Merging.count() << std::endl;
   }
-  bpIdentificationTasks.emplace_back(starting, this->possibleBorderPoints.end());
-  
-  //identifyBorderPoints_threaded();
-  stop = std::chrono::steady_clock::now();  
-  duration_identifyingBorderPoints = stop - start;
-  benchStream << duration_identifyingBorderPoints.count() << std::endl;
-
-  //Union CP using the new multi level structure (only contains Core points)
-  //Make tasks (select level based on sum of bucket sizes squared)
-
-  benchStream << "Merging: ";
-  start = std::chrono::steady_clock::now(); 
-  size_t CPMergelevel;
-  if (level != -1) {
-    std::cout << "Using fixed level " << level << std::endl;
-    CPMergelevel = level;
-  } else {
-    CPMergelevel = findCPMergingLevel(); 
-  } 
-  CPMergingTasks.reserve(reps(CPMergelevel)); 
-  for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){
-    CPMergingTasks.emplace_back(**table);
-  }  
-  CPMerging_threaded();
-  stop = std::chrono::steady_clock::now();
-  duration_Merging = stop - start;
-  benchStream << duration_Merging.count() << std::endl;
   
   benchStream << "labeling points: \t" << std::flush;
   start = std::chrono::steady_clock::now();

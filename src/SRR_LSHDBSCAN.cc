@@ -328,7 +328,9 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
           std::cout << "carried out " << comparisons << " comparisons on level " << bestK << " and found " << truepoints << " passing points. Resulted in " << result_set.size() << " points." << std::endl;
 #endif
           g_finished++;
-          std::cout << "finished roughly " << g_finished << " points" << std::endl;          
+          if (g_finished % 10000 == 0) {
+            std::cout << "finished roughly " << g_finished << " points" << std::endl;
+          }
           if(0 < result_set.size() && result_set.size() < minPts){
             input->possibleBorderPoints.push_back(&(*iter));
           }

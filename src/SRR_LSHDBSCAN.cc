@@ -4,6 +4,8 @@ long g_finished = 0;
 
 //#define SRR_PERFORMANCE
 
+Statistics counters;
+
 SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_, 
                             double delta_,
                             double memoConstraint_,
@@ -499,9 +501,9 @@ void SRR_LSHDBSCAN::getWork(std::ostream& stream,char deli){ // this function is
 }
 
 void SRR_LSHDBSCAN::getWork(std::string fileName){
-  populateHashTables_threaded();
-  populationTasks.clear(); 
-  std::cout << "done populating hashtables" << std::endl;
+  //populateHashTables_threaded();
+  //populationTasks.clear(); 
+  //std::cout << "done populating hashtables" << std::endl;
   
   HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
   HighFive::DataSet dataset = file.createDataSet<size_t>("work", {this->ds->points.size(), maxDepth+1}); 
@@ -509,6 +511,9 @@ void SRR_LSHDBSCAN::getWork(std::string fileName){
   for(auto p: ds->points){
     dataset.select({counter,0}, {1, maxDepth + 1}).write(getWorkPoint(p));
     counter++; 
+    if (counter % 1000 == 0) {
+      std::cout << counter << std::endl;
+    }
   }
 }
 
@@ -579,15 +584,20 @@ std::ostream& SRR_LSHDBSCAN::getLabels(std::ostream& stream, char deli) const{
   return stream;
 }
 
-void SRR_LSHDBSCAN::getLabels(std::string fileName){
-  HighFive::File labelsFile(fileName, HighFive::File::Truncate);
+void SRR_LSHDBSCAN::writeHDF5(std::string fileName, Statistics& counters){
+  HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+
 
   std::vector<int> labels;
   for(auto p: ds->points){
     labels.push_back(p.print());
   }
 
-  labelsFile.createDataSet("grp/labels", labels);
+  for (auto &[key , val]: counters.stats) {
+    file.createAttribute(key, val);
+  }
+
+  file.createDataSet("grp/labels", labels);
   return;
 }
 
@@ -612,6 +622,7 @@ void SRR_LSHDBSCAN::performClustering(){
   
   benchStream << "Populating hash tables:  "; 
 
+
   
   start = std::chrono::steady_clock::now();
   auto total_start = start;
@@ -621,6 +632,11 @@ void SRR_LSHDBSCAN::performClustering(){
   stop  = std::chrono::steady_clock::now();
   duration_populatingHashTables = stop - start;
   benchStream << duration_populatingHashTables.count() << std::endl;
+  counters.add_measurement("build ht", duration_populatingHashTables.count());
+
+  std::cout << "Writing statistics about work" << std::endl;
+  //getWork("test.hdf5");
+  std::cout << "done writing statistics" << std::endl;
 
   benchStream << "Identifying core points:  " << std::flush; 
   start = std::chrono::steady_clock::now();
@@ -629,6 +645,7 @@ void SRR_LSHDBSCAN::performClustering(){
   stop  = std::chrono::steady_clock::now();
   duration_identifyingCorePoints = stop - start;
   benchStream << duration_identifyingCorePoints.count() << std::endl;
+  counters.add_measurement("identify cp", duration_identifyingCorePoints.count());
   //Delete the old multi level hash tables
   for(size_t k = 0; k < levels.size(); k++){
     for(auto T: *levels[k]){
@@ -678,6 +695,7 @@ void SRR_LSHDBSCAN::performClustering(){
       stop = std::chrono::steady_clock::now();  
       duration_identifyingBorderPoints = stop - start;
       benchStream << duration_identifyingBorderPoints.count() << std::endl;
+      counters.add_measurement("identify bp", duration_identifyingBorderPoints.count());
     }
 
     //Union CP using the new multi level structure (only contains Core points)
@@ -700,6 +718,7 @@ void SRR_LSHDBSCAN::performClustering(){
     stop = std::chrono::steady_clock::now();
     duration_Merging = stop - start;
     benchStream << duration_Merging.count() << std::endl;
+    counters.add_measurement("merging", duration_Merging.count());
   }
   
   benchStream << "labeling points: \t" << std::flush;
@@ -709,6 +728,7 @@ void SRR_LSHDBSCAN::performClustering(){
   duration_relabelingData = stop - start;
   benchStream << duration_relabelingData.count() << std::endl;
   benchStream << "Total: " << (stop - total_start).count() / 1e9 << std::endl;
+  counters.add_measurement("total", (stop - total_start).count() / 1e9);
 }
 
 //Depricated

@@ -45,7 +45,10 @@ int main(int argc, char* argv[])
   std::stringstream ss;
   ss << "Labels_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << params.delta << "_memoLimit_"<< 
     params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".h5"; 
-  SRR_dbscan.getLabels(ss.str());
+  
+  SRR_dbscan.writeHDF5(ss.str(), counters);
+
+  std::cout << counters.stats["total"] << std::endl;
 
 
 

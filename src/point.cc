@@ -5,8 +5,12 @@
 #include <algorithm>
 #include <cassert>
 #include <iomanip>
+#include <x86intrin.h>
+
 
 std::vector<uint64_t> HASH;
+
+#define AVX2
 
 BasePoint::BasePoint()
 {}
@@ -300,8 +304,42 @@ double BasePoint::innerProduct(const BasePoint & h) const
   return std::inner_product(features.cbegin(), features.cend(), h.features.begin(), 0.0);
 }
 
-double BasePoint::squaredEuclideanDistance(const BasePoint & p) const
+inline float hsum256_ps_avx(__m256 v) {
+  const __m128 x128 = _mm_add_ps(_mm256_extractf128_ps(v, 1), _mm256_castps256_ps128(v));
+  const __m128 x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+  const __m128 x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
+  return _mm_cvtss_f32(x32);
+}
+
+float BasePoint::squaredEuclideanDistance(const BasePoint & p) const
 {
+#ifdef AVX2
+  float result=0;
+  auto x = &p.features[0];
+  auto y = &features[0];
+  auto f = features.size();
+
+  if (f > 7) {
+    __m256 d = _mm256_setzero_ps();
+    for (; f > 7; f -= 8) {
+      const __m256 diff = _mm256_sub_ps(_mm256_loadu_ps(x), _mm256_loadu_ps(y));
+      d = _mm256_add_ps(d, _mm256_mul_ps(diff, diff)); // no support for fmadd in AVX...
+      x += 8;
+      y += 8;
+    }
+    // Sum all floats in dot register.
+    result = hsum256_ps_avx(d);
+  }
+  // Don't forget the remaining values.
+  for (; f > 0; f--) {
+    float tmp = *x - *y;
+    result += tmp * tmp;
+    x++;
+    y++;
+  }
+  return result;
+
+#else
   assert(p.features.size() == features.size());
 
   double result = 0.0;
@@ -314,6 +352,7 @@ double BasePoint::squaredEuclideanDistance(const BasePoint & p) const
     }
   
   return result;
+#endif
 }
 
 /*

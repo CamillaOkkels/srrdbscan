@@ -4,11 +4,14 @@
 #include <point.h>
 #include <randomGen.h>
 #include <transformation.h>
+#include <statistics.h>
 #include <unordered_set>
 #include <chrono>
 #include <globals.h>
 #include <cassert>
 #include <highfive/H5File.hpp>
+
+extern Statistics counters;
 
 class PopulationTask
 {
@@ -138,7 +141,8 @@ public:
     void performClustering();
     std::ostream& getCorePoints(std::ostream&, char deli) const;
     std::ostream& getLabels(std::ostream&, char deli) const;
-    void getLabels(std::string fileName);
+    void writeHDF5(std::string fileName, Statistics& counters);
+
     std::ostream& getBenchmarkResults(std::ostream&, char deli) const;
     void getWork(std::ostream& stream,char deli);
     void getWork(std::string fileName);

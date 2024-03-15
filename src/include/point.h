@@ -23,7 +23,7 @@ class BasePoint
  public:
   size_t id = -1;
   size_t weight = 1;
-  std::vector<double> features;
+  std::vector<float> features;
 
   BasePoint();
   BasePoint(std::istringstream &, size_t id_ = -1);
@@ -42,7 +42,7 @@ class BasePoint
   double norm() const;
   double innerProduct(const BasePoint&) const;
   BasePoint operator+(const BasePoint & rhs) const;
-  double squaredEuclideanDistance(const BasePoint &) const;
+  float squaredEuclideanDistance(const BasePoint &) const;
   std::ostream & print(std::ostream & stream, char deli) const;
 };
 

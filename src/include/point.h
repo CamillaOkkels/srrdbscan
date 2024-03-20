@@ -5,9 +5,9 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <highfive/H5File.hpp>
-#include <highfive/H5DataSet.hpp>
-#include <highfive/H5DataSpace.hpp>
+// #include <highfive/H5File.hpp>
+// #include <highfive/H5DataSet.hpp>
+// #include <highfive/H5DataSpace.hpp>
 
 #define NOISE -1
 #define NON_NOISE -2
@@ -27,7 +27,7 @@ class BasePoint
 
   BasePoint();
   BasePoint(std::istringstream &, size_t id_ = -1);
-  BasePoint(std::vector<double> vec, size_t id_ = -1)
+  BasePoint(std::vector<float>& vec, size_t id_ = -1)
     {
       std::copy(vec.begin(), vec.end(), std::back_inserter(features));
       this->id = id_;
@@ -128,7 +128,7 @@ class dataset
   std::string name;
   
   void readData(std::string);
-  void readData_HDF5(std::string);
+  void readData(std::vector<std::vector<float>>& data);
   void relabelData();
   void resetData();
   void normalizeData();

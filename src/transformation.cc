@@ -668,8 +668,8 @@ void HashTable::identifyCoreBuckets_densityStyle()
 size_t HashTable::getClosestToMean(std::vector<point*> & vec) const
 {
   assert(vec.size() != 0);
-
-  point mean(std::vector<double> (ds->numberOfDimensions, 0));
+  std::vector<float> p(ds->numberOfDimensions, 0);
+  point mean(p, 0);
 
   for (const point * p : vec)
     mean += *p;

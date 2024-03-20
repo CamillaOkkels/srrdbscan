@@ -2,6 +2,35 @@
 #include<globals.h>
 #include<SRR_LSHDBSCAN.h>
 #include<point.h>
+#include <highfive/H5File.hpp>
+#include <highfive/H5DataSet.hpp>
+#include <highfive/H5DataSpace.hpp>
+
+void read_hdf5(dataset& d, std::string fileName) {
+  std::cout << "Reading HDF5 format input dataset..." << std::endl;
+  HighFive::File file(fileName, HighFive::File::ReadOnly);
+  auto hdf5Dataset = file.getDataSet("data");
+  std::vector<std::vector<float>> data;
+  hdf5Dataset.read(data);
+
+  d.readData(data);
+}
+
+void write_result(dataset& ds, std::string fileName, Statistics& counters){
+  HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+
+  std::vector<int> labels;
+  for(auto p: ds.points){
+    labels.push_back(p.print());
+  }
+
+  for (auto &[key , val]: counters.stats) {
+    file.createAttribute(key, val);
+  }
+
+  file.createDataSet("grp/labels", labels);
+  return;
+}
 
 #define BENCHMARK true
 
@@ -12,7 +41,7 @@ int main(int argc, char* argv[])
 
   dataset d;
   auto start = std::chrono::steady_clock::now();
-  d.readData_HDF5(params.fileName);
+  read_hdf5(d, params.fileName);
   auto stop = std::chrono::steady_clock::now();  
   std::chrono::duration<double> duration = (stop - start);
   std::cout << "Reading data took: " << duration.count() << std::endl;
@@ -46,7 +75,8 @@ int main(int argc, char* argv[])
   ss << "Labels_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << params.delta << "_memoLimit_"<< 
     params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".h5"; 
   
-  SRR_dbscan.writeHDF5(ss.str(), counters);
+  //SRR_dbscan.writeHDF5(ss.str(), counters);
+  write_result(d, ss.str(), counters);
 
   std::cout << counters.stats["total"] << std::endl;
 

@@ -24,6 +24,16 @@ BasePoint::BasePoint(std::istringstream & str_stream, size_t id_)
   this->id = id_;
 }
 
+void dataset::readData(std::vector<std::vector<float>>& data) 
+{
+  size_t id = 0;
+  for (auto& vec: data) {
+    points.push_back(point(vec, id++));
+  }
+  numberOfDimensions = data[0].size();
+}
+
+
 void dataset::readData(std::string file_name)
 {
   std::cout << "Reading input dataset..." << std::endl;
@@ -61,41 +71,6 @@ void dataset::readData(std::string file_name)
 		  << "Inconsistent dimensionality among data points.\n" << std::endl;
 	exit(EXIT_FAILURE);
       }
-}
-
-void dataset::readData_HDF5(std::string fileName){
-
-  std::cout << "Reading HDF5 format input dataset..." << std::endl;
-  HighFive::File file(fileName, HighFive::File::ReadOnly);
-  auto hdf5Dataset = file.getDataSet("data");
-  std::vector<std::vector<double>> data;
-  hdf5Dataset.read(data);
-
-  size_t id = 0;
-  for(std::vector<double> p: data){
-    points.push_back(point(p, id++));
-    //std::cout << points.back().id << std::endl;
-  }
-  
-  if (points.size() == 0)
-    {
-      std::cerr << "Error while reading data: "
-		<< "Input dataset is empty" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-
-  this->numberOfDimensions = points[0].features.size();
-
-  this->name = fileName.substr(fileName.find_last_of("/\\") + 1);
-  bool first = true;
-  for (const auto & point : points){
-    if (this->numberOfDimensions != point.features.size())
-      {
-	        std::cerr << "Error while reading data:"
-		      << "Inconsistent dimensionality among data points.\n" << std::endl;
-	        exit(EXIT_FAILURE);
-      }
-  }
 }
 
 std::ostream & dataset::printData(std::ostream & stream, char deli, bool onlyLabel) const
@@ -494,19 +469,19 @@ void dataset::normalizeData()
     point.normalize();
 }
 
-void dataset::meanRemoveData()
-{
-  std::cout << "Mean Removing Data ..." << std::endl;
+// void dataset::meanRemoveData()
+// {
+//   std::cout << "Mean Removing Data ..." << std::endl;
   
-  point mean(std::vector<double> (numberOfDimensions, 0));
-  for (const auto & p : points)
-    mean += p;
+//   point mean(std::vector<float> (numberOfDimensions, 0));
+//   for (const auto & p : points)
+//     mean += p;
 
-  mean /= points.size();
+//   mean /= points.size();
 
-  for (auto & p : points)
-    p -= mean;
-}
+//   for (auto & p : points)
+//     p -= mean;
+// }
 
 void point::setLabel(size_t l)
 {

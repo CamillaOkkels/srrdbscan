@@ -505,16 +505,16 @@ void SRR_LSHDBSCAN::getWork(std::string fileName){
   //populationTasks.clear(); 
   //std::cout << "done populating hashtables" << std::endl;
   
-  HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
-  HighFive::DataSet dataset = file.createDataSet<size_t>("work", {this->ds->points.size(), maxDepth+1}); 
-  size_t counter = 0;
-  for(auto p: ds->points){
-    dataset.select({counter,0}, {1, maxDepth + 1}).write(getWorkPoint(p));
-    counter++; 
-    if (counter % 1000 == 0) {
-      std::cout << counter << std::endl;
-    }
-  }
+  // HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
+  // HighFive::DataSet dataset = file.createDataSet<size_t>("work", {this->ds->points.size(), maxDepth+1}); 
+  // size_t counter = 0;
+  // for(auto p: ds->points){
+  //   dataset.select({counter,0}, {1, maxDepth + 1}).write(getWorkPoint(p));
+  //   counter++; 
+  //   if (counter % 1000 == 0) {
+  //     std::cout << counter << std::endl;
+  //   }
+  // }
 }
 
 void SRR_LSHDBSCAN::identifyCorePoints(){
@@ -582,23 +582,6 @@ std::ostream& SRR_LSHDBSCAN::getLabels(std::ostream& stream, char deli) const{
     p.print(stream, deli, true) << std::endl;
   }
   return stream;
-}
-
-void SRR_LSHDBSCAN::writeHDF5(std::string fileName, Statistics& counters){
-  HighFive::File file(fileName, HighFive::File::ReadWrite | HighFive::File::Create | HighFive::File::Truncate);
-
-
-  std::vector<int> labels;
-  for(auto p: ds->points){
-    labels.push_back(p.print());
-  }
-
-  for (auto &[key , val]: counters.stats) {
-    file.createAttribute(key, val);
-  }
-
-  file.createDataSet("grp/labels", labels);
-  return;
 }
 
 void SRR_LSHDBSCAN::introduceMe()

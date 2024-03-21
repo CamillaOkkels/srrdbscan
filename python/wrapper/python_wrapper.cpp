@@ -92,6 +92,7 @@ public:
         dbscan->performClustering();
 
         for(auto p: ds->points){
+            std::cout << p.print() << std::endl;
             labels.push_back(p.print());
         }
 

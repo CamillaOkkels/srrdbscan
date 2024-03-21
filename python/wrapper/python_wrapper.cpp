@@ -66,7 +66,7 @@ class SRR {
 
 public:
     
-    std::vector<size_t> fit_predict(
+    std::vector<int> fit_predict(
         std::vector<std::vector<float>>& data,
         double delta,
         double mem_constraint,
@@ -78,7 +78,7 @@ public:
         double epsilon_=1.0,
         int minPts_=100
     ) {
-        std::vector<size_t> labels;
+        std::vector<int> labels;
         ds = new dataset();
         ds->readData(data);
 

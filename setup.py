@@ -16,7 +16,7 @@ except ImportError:
 
 
 extra_args = ['-std=c++17', '-march=native', '-O3']
-extra_link_args = ['-lhdf5_cpp', '-ltbb']
+extra_link_args = ['-ltbb']
 
 if sys.platform != 'darwin':
     extra_args += ['-fopenmp']

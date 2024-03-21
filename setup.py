@@ -36,7 +36,7 @@ module = Extension(
     include_dirs=[ 'src/', 'src/include', 'external/pybind11/include', 'libs', 'third_party/HighFive/include', 'third_party/HighFive/include/highfive'])
 
 setup(
-    name='DBSCAN_SRR',
+    name='dbscan_srr',
     version='0.1',
     author='Viktor Bello Thomsen, Martin Aumüller',
     author_email='maau@itu.dk',

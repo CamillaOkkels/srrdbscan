@@ -289,17 +289,20 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
                 false,
                 true)){
         
+        std::unordered_set<point*> result_set;
+        result_set.reserve(minPts);
         for (auto iter = task.begin; iter < task.end; iter++){
           //Performs the CP identityfication for each point that the thread is responsible for.
           point p = *iter;
+          result_set.insert(&p);
           int bestK = input->level;
           if (bestK == -1) {
-            bestK = input->findBestLevel(p);
+            bestK = input->cpLevel;
           } 
           long comparisons = 0;
           long truepoints = 0;
           //std::cout << "identification on level " << bestK << std::endl;
-          std::unordered_set<point*> result_set; result_set.insert(&p);
+          //std::unordered_set<point*> result_set; result_set.insert(&p);
           for(auto T = input->levels[bestK]->begin(); T != input->levels[bestK]->end(); T++){
             //Hash q with the hyperplanes of T
             HashedPoint hq;
@@ -323,6 +326,7 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
             if(result_set.size() >= minPts){
               iter->setAsCorePoint();
               input->corePoints.push_back(&(*iter)); //todo: is this still needed?
+              result_set.clear();
               break;
             }
           }
@@ -398,6 +402,36 @@ size_t SRR_LSHDBSCAN::findBestLevel(point q){
     return kbest;
 }
 
+size_t SRR_LSHDBSCAN::findCPIdentificationLevel(){ //This can maybe be optimized to not look further at a given point
+  
+  size_t bestlevel = 0, minWork = ds->points.size() * ds->points.size(), index = 0;
+  for(auto level = levels.begin(); level != levels.end(); level++){
+    size_t totalWork_level = 0;
+    for(auto table = (*level)->begin(); table != (*level)->end(); table++ ){
+      for(auto bucket: (*table)->hashTable){
+        size_t bucket_size = bucket.second.size(); 
+        totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
+      }
+      if(totalWork_level > minWork){
+        break;
+      }
+    }
+#ifdef SRR_PERFORMANCE
+    std::cout << "Level " << index << " has total work " << totalWork_level << " per table" << std::endl;
+#endif
+    if(totalWork_level < minWork){
+      minWork = totalWork_level;
+      bestlevel = index;
+    }
+    index++;
+  }
+#ifdef SRR_PERFORMANCE
+  std::cout << "Chosen level: " << bestlevel << std::endl; 
+#endif
+  return bestlevel;
+}
+
+
 size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not look further at a given point
   
   size_t bestlevel = 0, minWork = corePoints.size() * corePoints.size(), index = 0;
@@ -413,7 +447,7 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
       }
     }
 #ifdef SRR_PERFORMANCE
-    std::cout << "Level " << index << " has avg. work " << totalWork_level << " per table" << std::endl;
+    std::cout << "Level " << index << " has total work " << totalWork_level << " per table" << std::endl;
 #endif
     if(totalWork_level < minWork){
       minWork = totalWork_level;
@@ -623,8 +657,10 @@ void SRR_LSHDBSCAN::performClustering(){
 
   benchStream << "Identifying core points:  " << std::flush; 
   start = std::chrono::steady_clock::now();
-  identifyCorePoints_threaded();
   //identifyCorePoints();
+  cpLevel = findCPIdentificationLevel();
+  std::cout << "best level is " << cpLevel; 
+  identifyCorePoints_threaded();
   stop  = std::chrono::steady_clock::now();
   duration_identifyingCorePoints = stop - start;
   benchStream << duration_identifyingCorePoints.count() << std::endl;

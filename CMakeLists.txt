@@ -8,8 +8,8 @@ endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS "-std=c++11 -O3  -mavx2")
-#set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ffast-math -mavx2")
+set(CMAKE_CXX_FLAGS "-std=c++17 -O3  -mavx2")
+#set(CMAKE_CXX_FLAGS "-std=c++17 -O3 -ffast-math -mavx2")
 message(STATUS "**************Build type: ${CMAKE_BUILD_TYPE}************")
 
 if(NOT DEFINED HIGHFIVE_USE_BOOST)
@@ -30,21 +30,9 @@ file (GLOB LIB_HEADERS src/include/*.h)
 add_library(myLib ${LIB_SOURCES} ${LIB_HEADERS})
 target_link_libraries(myLib HighFive)
 
-
-add_executable (Vanila_DBSCAN_LSH_exec apps/main_vanilla_dbscan_lsh.cc)
-target_link_libraries(Vanila_DBSCAN_LSH_exec myLib gsl gslcblas gomp tbb pthread)
-
-add_executable (Vanila_DBSCAN_exec apps/main_vanilla_dbscan.cc)
-target_link_libraries(Vanila_DBSCAN_exec myLib gsl gslcblas gomp tbb pthread)
-
-add_executable (LSHDBSCAN_exec apps/main_general.cc)
-target_link_libraries(LSHDBSCAN_exec myLib gsl gslcblas gomp tbb pthread)
-
-add_executable (ParameterExploration_exec apps/main_parameter_exploration.cc)
-target_link_libraries(ParameterExploration_exec myLib gsl gslcblas gomp tbb pthread)
-
 add_executable(SRR_LSHDBSCAN_exec apps/main_SRR_DBSCAN.cc)
-target_link_libraries(SRR_LSHDBSCAN_exec myLib gsl gslcblas gomp tbb pthread)
+#target_link_libraries(SRR_LSHDBSCAN_exec myLib gsl gslcblas gomp tbb pthread)
+target_link_libraries(SRR_LSHDBSCAN_exec myLib gomp tbb pthread)
 
 
 # for testing that HighFive works

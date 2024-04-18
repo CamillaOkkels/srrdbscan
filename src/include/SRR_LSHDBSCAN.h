@@ -94,6 +94,7 @@ private:
     void identifyCorePoints_threaded();
 
     void populateCorePoints_threaded();
+    size_t findCPIdentificationLevel();
     size_t findCPMergingLevel();
     void CPMerging_threaded();
     void identifyBorderPoints_threaded();
@@ -125,6 +126,8 @@ public:
     std::vector<CorePointPopulationTask> CPPopulationTasks;
     std::vector<PopulationTask> CPMergingTasks;
     std::vector<RangeTask_tbb> bpIdentificationTasks;
+
+    size_t cpLevel = 0;
     
     tbb::concurrent_vector<point*> corePoints; 
     tbb::concurrent_vector<point*> possibleBorderPoints; 

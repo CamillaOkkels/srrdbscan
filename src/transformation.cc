@@ -48,6 +48,14 @@ void HashTable::populateHashTable()
 	  hashedPoint.features.clear();
 	  hashTable[hash].push_back(&point);
     }
+
+	//std::cout << "hash table has " << hashTable.size() << " buckets." << std::endl;
+
+	// shrink-to-fit all buckets
+
+	// for (auto& bucket: hashTable) {
+	// 	bucket.second.shrink_to_fit();
+	// }
 }
 
 void HashTable::populateHashTable(std::vector<point>::iterator begin,

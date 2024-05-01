@@ -17,16 +17,15 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
                               numberOfThreads(numberOfThreads_) ,benchmark(benchmark_), benchStream(benchName), 
                               level(level_), shrinkageFactor(shrinkageFactor_)
 {
+  	for (int i = 0; i < 10; i++) {
+		  HASH.push_back(gen.getHashCoeff());
+	  }
     setDataset(ds_);
     setParams();  
 
     pid = new pthread_t[numberOfThreads];
 
     //initialize hashes
-
-	  for (int i = 0; i < 10; i++) {
-		  HASH.push_back(gen.getHashCoeff());
-	  }
 
     //std::cerr << "depth: " << maxDepth << std::endl;
     initLevels();
@@ -86,6 +85,12 @@ void SRR_LSHDBSCAN::setParams(){
 
     while(memoCost(K_max) < memoConstraint){
         std::cerr << "Level: " << K_max << " Cost: " << memoCost(K_max) << std::endl;
+        HashTable ht(ds, K_max, &gen);
+        ht.populateHashTable();
+        if (ht.hashTable.size() > .1 * ds->points.size()) {
+          std::cerr << "not building more levels since buckets are too small" << std::endl;
+          break;
+        }
         K_max++;
     }
     if(K_max > 0) this->maxDepth =  --K_max; //size_t could be unsigned int and (--) would underflow

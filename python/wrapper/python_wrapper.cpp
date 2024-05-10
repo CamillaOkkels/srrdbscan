@@ -82,13 +82,14 @@ public:
         ds = new dataset();
         ds->readData(data);
 
-        dbscan = std::make_unique<SRR_LSHDBSCAN>(ds, delta, mem_constraint,
-            benchmark, benchName, numberOfThreads, level, shrinkageFactor);
-
         epsilon_original = epsilon_;
         epsilon = epsilon_ * epsilon_;
         minPts = minPts_;
-        
+
+        dbscan = std::make_unique<SRR_LSHDBSCAN>(ds, delta, mem_constraint,
+            benchmark, benchName, numberOfThreads, level, shrinkageFactor);
+
+
         dbscan->performClustering();
 
         for(auto p: ds->points){

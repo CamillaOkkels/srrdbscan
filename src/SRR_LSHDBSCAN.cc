@@ -17,7 +17,7 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
                               numberOfThreads(numberOfThreads_) ,benchmark(benchmark_), benchStream(benchName), 
                               level(level_), shrinkageFactor(shrinkageFactor_)
 {
-  	for (int i = 0; i < 10; i++) {
+  	for (int i = 0; i < 30; i++) {
 		  HASH.push_back(gen.getHashCoeff());
 	  }
     setDataset(ds_);
@@ -79,7 +79,7 @@ double SRR_LSHDBSCAN::memoCost(size_t limit){
 
 //This should not be done in K_max rounds
 void SRR_LSHDBSCAN::setParams(){
-    p1 = 1/M_E;
+    p1 = .8; //1/M_E; //.8 is setting for 4 * epsilon choice.
     p2 = 0.0; //This values does not really matter until we care what the approximation factor(C) is.  
     size_t K_max = 0; 
 
@@ -436,26 +436,69 @@ size_t SRR_LSHDBSCAN::findCPIdentificationLevel(){ //This can maybe be optimized
   return bestlevel;
 }
 
+double harmonic_mean(std::vector<uint64_t> arr) { 
+  double res = 0.0;
+  for (uint64_t& x: arr) {
+    res += 1/(double)x;
+  }
+  return arr.size() / res;
+}
+
+uint64_t average(std::vector<uint64_t> arr) {
+  uint64_t res = 0;
+  for (auto& x: arr) {
+    res += x;
+  }
+  return res / arr.size();
+}
 
 size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not look further at a given point
   
   size_t bestlevel = 0, minWork = corePoints.size() * corePoints.size(), index = 0;
+  std::vector<std::vector<uint64_t>> totalWork; 
   for(auto level = levels.begin(); level != levels.end(); level++){
     size_t totalWork_level = 0;
+    std::vector<uint64_t> workonlevel;
     for(auto table = (*level)->begin(); table != (*level)->end(); table++ ){
+      uint64_t workintable = 0;
       for(auto bucket: (*table)->hashTable){
         size_t bucket_size = bucket.second.size(); 
         totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
+        workintable += 1 + (bucket_size * (bucket_size - 1)) / 2;
       }
+      workonlevel.push_back(workintable);
       if(totalWork_level > minWork){
         break;
       }
     }
+
+    std::sort(workonlevel.begin(), workonlevel.end());
+    totalWork.push_back(workonlevel);
+    // std::cout << "reps:" << workonlevel.size() << std::endl;
+
+    // for (auto& x: workonlevel) { 
+    //   std::cout << x << " ";
+    // }
+    // std::cout << std::endl;
+
+    uint64_t median_totalwork = (*level)->size() * workonlevel[workonlevel.size() / 2];
+    //uint64_t median_totalwork = totalWork_level;
+
+    // std::cout << median_totalwork << std::endl;    
+
+
 #ifdef SRR_PERFORMANCE
     std::cout << "Level " << index << " has total work " << totalWork_level << " per table" << std::endl;
+    std::cout << "It has median work of " << workonlevel.size() * workonlevel[workonlevel.size() / 2] << std::endl; 
+    //std::cout << "It has harmonic average work of " << workonlevel.size() * harmonic_mean(workonlevel) << std::endl;
+    //std::cout << "It has average work of " << workonlevel.size() * average(workonlevel) << std::endl;
 #endif
-    if(totalWork_level < minWork){
-      minWork = totalWork_level;
+    // if(totalWork_level < minWork){
+    //   minWork = totalWork_level;
+    //   bestlevel = index;
+    // }
+    if(median_totalwork < minWork){
+      minWork = median_totalwork;
       bestlevel = index;
     }
     index++;
@@ -463,6 +506,17 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
 #ifdef SRR_PERFORMANCE
   std::cout << "Chosen level: " << bestlevel << std::endl; 
 #endif
+
+  // for (auto& w: totalWork) {
+  //   std::sort(w.begin(), w.end());
+  // }
+  // for (auto& w: totalWork[bestlevel]) { 
+  //   std::cout << " " << w;
+  // }
+  // std::cout << std::endl;
+  // auto bestlevelwork = totalWork[bestlevel];
+  // auto n_bestlevel = bestlevelwork.size();
+  // std::cout << "Median-to-Max-Ratio:" << bestlevelwork[n_bestlevel - 1] / (double) bestlevelwork[n_bestlevel / 2] << std::endl;
   return bestlevel;
 }
 
@@ -733,6 +787,7 @@ void SRR_LSHDBSCAN::performClustering(){
       CPMergelevel = level;
     } else {
       CPMergelevel = findCPMergingLevel(); 
+      std::cout << "Merging on level " << CPMergelevel << std::endl;
     } 
     CPMergingTasks.reserve(reps(CPMergelevel)); 
     for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){

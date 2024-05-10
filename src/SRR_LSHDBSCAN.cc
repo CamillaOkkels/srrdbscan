@@ -698,7 +698,6 @@ void SRR_LSHDBSCAN::performClustering(){
   
   benchStream << "Populating hash tables:  "; 
 
-
   
   start = std::chrono::steady_clock::now();
   auto total_start = start;

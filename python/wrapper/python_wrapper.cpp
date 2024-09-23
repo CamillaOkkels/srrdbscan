@@ -11,60 +11,18 @@ namespace python {
 
 namespace py = pybind11;
 
-
-// int main(int argc, char* argv[])
-// {
-//   SRRParameters params;
-//   parseSRRArguments(argc, argv, params);
-
-//   dataset d;
-//   auto start = std::chrono::steady_clock::now();
-//   d.readData_HDF5(params.fileName);
-//   auto stop = std::chrono::steady_clock::now();  
-//   std::chrono::duration<double> duration = (stop - start);
-//   std::cout << "Reading data took: " << duration.count() << std::endl;
-  
-//   std::stringstream benchName;
-//   benchName << "Benchmark_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << 
-//     params.delta << "_memoLimit_"<< params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".txt";
-  
-//   std::cout << "Saving in file " << benchName.str() << std::endl;
-
-//   if (metric == angular)
-//     {
-//       d.normalizeData();      //d.meanRemoveData();
-//     }
-
-//   std::cerr << "Memory constraint is " << params.memoConstraint << std::endl;
-//   SRR_LSHDBSCAN SRR_dbscan(&d,
-//         params.delta,
-//         params.memoConstraint,
-// 				BENCHMARK,
-//         benchName.str(),      
-//         params.numberOfThreads,
-//         params.level,
-//         params.shrinkageFactor);
-//   SRR_dbscan.introduceMe();
-  
-//   std::cout << "Running SSR_LSH clustering" << std::endl;
-//   SRR_dbscan.performClustering();
-//   std::cout << "Writing Labels to file" << std::endl;
-//   std::stringstream ss;
-//   ss << "Labels_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << params.delta << "_memoLimit_"<< 
-//     params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".h5"; 
-  
-//   SRR_dbscan.writeHDF5(ss.str(), counters);
-
-//   std::cout << counters.stats["total"] << std::endl;
-
-//   return 0;
-// }
-
 class SRR {
     std::unique_ptr<SRR_LSHDBSCAN> dbscan;
     dataset* ds;
 
 public:
+
+    Statistics c;
+
+    std::unordered_map<std::string, double> statistics() {
+        return c.stats;
+    }
+
     
     std::vector<int> fit_predict(
         std::vector<std::vector<float>>& data,
@@ -97,6 +55,8 @@ public:
             labels.push_back(p.print());
         }
 
+        c = counters;
+
 
         return labels;
 
@@ -106,7 +66,9 @@ public:
 PYBIND11_MODULE(dbscan_srr, m) {
     py::class_<SRR>(m, "SRR")
         .def(py::init<>())
-        .def("fit_predict", &SRR::fit_predict);
+        .def("fit_predict", &SRR::fit_predict)
+        .def("statistics", &SRR::statistics);
+
 }
 
 

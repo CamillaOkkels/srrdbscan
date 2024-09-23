@@ -417,6 +417,8 @@ size_t SRR_LSHDBSCAN::findCPIdentificationLevel(){ //This can maybe be optimized
         size_t bucket_size = bucket.second.size(); 
         totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
       }
+      std::string s = "level_" + std::to_string(index);
+      counters.add_measurement(s, totalWork_level);
       if(totalWork_level > minWork){
         break;
       }
@@ -482,6 +484,7 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
     // std::cout << std::endl;
 
     uint64_t median_totalwork = (*level)->size() * workonlevel[workonlevel.size() / 2];
+    counters.add_measurement("merge_level_" + std::to_string(index), median_totalwork);
     //uint64_t median_totalwork = totalWork_level;
 
     // std::cout << median_totalwork << std::endl;    
@@ -707,7 +710,7 @@ void SRR_LSHDBSCAN::performClustering(){
   stop  = std::chrono::steady_clock::now();
   duration_populatingHashTables = stop - start;
   benchStream << duration_populatingHashTables.count() << std::endl;
-  counters.add_measurement("build ht", duration_populatingHashTables.count());
+  counters.add_measurement("timing_build ht", duration_populatingHashTables.count());
 
   std::cout << "Writing statistics about work" << std::endl;
   //getWork("test.hdf5");
@@ -717,12 +720,13 @@ void SRR_LSHDBSCAN::performClustering(){
   start = std::chrono::steady_clock::now();
   //identifyCorePoints();
   cpLevel = findCPIdentificationLevel();
-  std::cout << "best level is " << cpLevel; 
+  std::cout << "best level is " << cpLevel;
+  counters.add_measurement("level_cp", cpLevel); 
   identifyCorePoints_threaded();
   stop  = std::chrono::steady_clock::now();
   duration_identifyingCorePoints = stop - start;
   benchStream << duration_identifyingCorePoints.count() << std::endl;
-  counters.add_measurement("identify cp", duration_identifyingCorePoints.count());
+  counters.add_measurement("timing_identify cp", duration_identifyingCorePoints.count());
   //Delete the old multi level hash tables
   for(size_t k = 0; k < levels.size(); k++){
     for(auto T: *levels[k]){
@@ -772,7 +776,7 @@ void SRR_LSHDBSCAN::performClustering(){
       stop = std::chrono::steady_clock::now();  
       duration_identifyingBorderPoints = stop - start;
       benchStream << duration_identifyingBorderPoints.count() << std::endl;
-      counters.add_measurement("identify bp", duration_identifyingBorderPoints.count());
+      counters.add_measurement("timing_identify bp", duration_identifyingBorderPoints.count());
     }
 
     //Union CP using the new multi level structure (only contains Core points)
@@ -787,7 +791,8 @@ void SRR_LSHDBSCAN::performClustering(){
     } else {
       CPMergelevel = findCPMergingLevel(); 
       std::cout << "Merging on level " << CPMergelevel << std::endl;
-    } 
+    }
+    counters.add_measurement("level_merge", CPMergelevel); 
     CPMergingTasks.reserve(reps(CPMergelevel)); 
     for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){
       CPMergingTasks.emplace_back(**table);
@@ -796,7 +801,7 @@ void SRR_LSHDBSCAN::performClustering(){
     stop = std::chrono::steady_clock::now();
     duration_Merging = stop - start;
     benchStream << duration_Merging.count() << std::endl;
-    counters.add_measurement("merging", duration_Merging.count());
+    counters.add_measurement("timing_merging", duration_Merging.count());
   }
   
   benchStream << "labeling points: \t" << std::flush;
@@ -806,7 +811,7 @@ void SRR_LSHDBSCAN::performClustering(){
   duration_relabelingData = stop - start;
   benchStream << duration_relabelingData.count() << std::endl;
   benchStream << "Total: " << (stop - total_start).count() / 1e9 << std::endl;
-  counters.add_measurement("total", (stop - total_start).count() / 1e9);
+  counters.add_measurement("timing_total", (stop - total_start).count() / 1e9);
 }
 
 //Depricated

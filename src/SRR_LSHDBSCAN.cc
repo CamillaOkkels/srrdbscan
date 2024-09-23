@@ -87,7 +87,7 @@ void SRR_LSHDBSCAN::setParams(){
         std::cerr << "Level: " << K_max << " Cost: " << memoCost(K_max) << std::endl;
         HashTable ht(ds, K_max, &gen);
         ht.populateHashTable();
-        if (ht.hashTable.size() > .1 * ds->points.size()) {
+        if (ht.hashTable.size() > .01 * ds->points.size()) {
           std::cerr << "not building more levels since buckets are too small" << std::endl;
           break;
         }
@@ -417,12 +417,12 @@ size_t SRR_LSHDBSCAN::findCPIdentificationLevel(){ //This can maybe be optimized
         size_t bucket_size = bucket.second.size(); 
         totalWork_level += 1 + (bucket_size * (bucket_size - 1)) / 2;
       }
-      std::string s = "level_" + std::to_string(index);
-      counters.add_measurement(s, totalWork_level);
       if(totalWork_level > minWork){
         break;
       }
     }
+    std::string s = "level_" + std::to_string(index);
+    counters.add_measurement(s, totalWork_level);
 #ifdef SRR_PERFORMANCE
     std::cout << "Level " << index << " has total work " << totalWork_level << " per table" << std::endl;
 #endif

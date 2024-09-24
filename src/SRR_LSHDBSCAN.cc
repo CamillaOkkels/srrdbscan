@@ -87,7 +87,7 @@ void SRR_LSHDBSCAN::setParams(){
         std::cerr << "Level: " << K_max << " Cost: " << memoCost(K_max) << std::endl;
         HashTable ht(ds, K_max, &gen);
         ht.populateHashTable();
-        if (ht.hashTable.size() > .01 * ds->points.size()) {
+        if (ht.hashTable.size() > .2 * ds->points.size()) {
           std::cerr << "not building more levels since buckets are too small" << std::endl;
           break;
         }

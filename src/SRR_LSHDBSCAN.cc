@@ -483,7 +483,8 @@ size_t SRR_LSHDBSCAN::findCPMergingLevel(){ //This can maybe be optimized to not
     // }
     // std::cout << std::endl;
 
-    uint64_t median_totalwork = (*level)->size() * workonlevel[workonlevel.size() / 2];
+    // compute median total work per repetition (accounting for number of threads)
+    uint64_t median_totalwork = (*level)->size() * workonlevel[workonlevel.size() / 2] / std::min((*level)->size(), numberOfThreads);
     counters.add_measurement("merge_level_" + std::to_string(index), median_totalwork);
     //uint64_t median_totalwork = totalWork_level;
 

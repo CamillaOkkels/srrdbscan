@@ -10,6 +10,6 @@ X = np.array(f['data'])
 
 srr = dbscan.SRR()
 
-srr.fit_predict(X, 0.5, 3, True, "test", 56, -1, 1, eps, minPts)
+srr.fit_predict(X, 0.5, 3, True, "test", 56, -1, 1, eps, minPts, 1.0)
 print(srr.statistics())
 

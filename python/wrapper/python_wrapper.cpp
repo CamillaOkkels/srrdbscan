@@ -34,7 +34,8 @@ public:
         int level=-1,
         double shrinkageFactor=1.0,
         double epsilon_=1.0,
-        int minPts_=100
+        int minPts_=100,
+        double approxFactor = 1.0f
     ) {
         std::vector<int> labels;
         ds = new dataset();
@@ -43,6 +44,7 @@ public:
         epsilon_original = epsilon_;
         epsilon = epsilon_ * epsilon_;
         minPts = minPts_;
+        approx = approxFactor;
 
         dbscan = std::make_unique<SRR_LSHDBSCAN>(ds, delta, mem_constraint,
             benchmark, benchName, numberOfThreads, level, shrinkageFactor);

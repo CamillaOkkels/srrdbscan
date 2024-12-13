@@ -46,7 +46,7 @@ double euclideanDistance(const point & a, const point & b)
 int euclideanHash(const point & a, const BasePoint & b)
 {
   double result = a.innerProduct(b);
-  result = result / (4  * approx * epsilon_original);
+  result = result / (4  *  epsilon_original);
   result = std::floor(result);
   return static_cast<int> (result);
 }

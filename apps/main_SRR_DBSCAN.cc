@@ -47,7 +47,8 @@ int main(int argc, char* argv[])
   std::cout << "Reading data took: " << duration.count() << std::endl;
   
   std::stringstream benchName;
-  benchName << "Benchmark_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << 
+  benchName << "Benchmark_file_" << d.name << "_eps_" << epsilon_original 
+    << "_approx_" << approx << "_minPts_" << minPts << "_delta_" << 
     params.delta << "_memoLimit_"<< params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".txt";
   
   std::cout << "Saving in file " << benchName.str() << std::endl;
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
   SRR_dbscan.performClustering();
   std::cout << "Writing Labels to file" << std::endl;
   std::stringstream ss;
-  ss << "Labels_file_" << d.name << "_eps_" << epsilon_original << "_minPts_" << minPts << "_delta_" << params.delta << "_memoLimit_"<< 
+  ss << "Labels_file_" << d.name << "_eps_" << epsilon_original  << "_approx_" << approx << "_minPts_" << minPts << "_delta_" << params.delta << "_memoLimit_"<< 
     params.memoConstraint << "_level_" << params.level << "_shrinkage_" << params.shrinkageFactor << ".h5"; 
   
   //SRR_dbscan.writeHDF5(ss.str(), counters);

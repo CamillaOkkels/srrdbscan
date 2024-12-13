@@ -5,6 +5,7 @@
 
 double epsilon_original = 0.001;
 double epsilon = epsilon_original * epsilon_original;
+double approx = 1.0f;
 size_t minPts = 500;
 
 std::vector<point*> corePoints;
@@ -45,7 +46,7 @@ double euclideanDistance(const point & a, const point & b)
 int euclideanHash(const point & a, const BasePoint & b)
 {
   double result = a.innerProduct(b);
-  result = result / (4 * epsilon_original);
+  result = result / (4  * approx * epsilon_original);
   result = std::floor(result);
   return static_cast<int> (result);
 }
@@ -121,7 +122,7 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 {
   int opt;
 
-  while ( (opt=getopt(argc, argv, "m:d:e:f:M:b:t:K:s:")) != -1  )
+  while ( (opt=getopt(argc, argv, "A:m:d:e:f:M:b:t:K:s:")) != -1  )
     {
       switch(opt)
 	{
@@ -131,6 +132,9 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 	case 'e':
 	  epsilon_original = std::stod(optarg);
 	  epsilon = epsilon_original;
+	  break;
+	case 'A':
+	  approx = std::stod(optarg);
 	  break;
 	case 'd':
 		params.delta = std::stod(optarg);
@@ -156,7 +160,8 @@ void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 	default:
 	  std::cout << "Usage: " << argv[0] << " "
 		    << "-f inputFile "
-		    << "[-M memomoryConstraint ] "
+		    << "[-M memoryConstraint ] "
+			<< "[-A approximationFactor]"
 		    << "[-e eps] " 
 		    << "[-m minPts] "
 			<< "[-t #threads] "

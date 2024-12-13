@@ -2,7 +2,7 @@
 
 long g_finished = 0;
 
-//#define SRR_PERFORMANCE
+// #define SRR_PERFORMANCE
 
 Statistics counters;
 
@@ -335,7 +335,7 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
               if (result_set.size() >= minPts)
                 break;
               comparisons++;
-              if(p.squaredEuclideanDistance(*q) <= epsilon){
+              if(p.squaredEuclideanDistance(*q) <= approx * approx * epsilon){
                 truepoints++;
                 result_set.insert(q);
               }
@@ -704,6 +704,7 @@ void SRR_LSHDBSCAN::introduceMe()
 	    << "\tMemory Constraint in GB: " << this->memoConstraint 
 	    << std::endl
 	    << "\tEps: " << epsilon_original
+      << "\tApprox: " << approx
 	    << "\tminPts: " << minPts
 	    << std::endl;
 }
@@ -731,8 +732,10 @@ void SRR_LSHDBSCAN::performClustering(){
 
   benchStream << "Identifying core points:  " << std::flush; 
   start = std::chrono::steady_clock::now();
-  //identifyCorePoints();
+  //identifyCorePoints();a
+  std::cout << "finding level for cp identification" << std::endl;
   cpLevel = findCPIdentificationLevel();
+  std::cout << "found level for cp identification" << std::endl;
   std::cout << "best level is " << cpLevel;
   counters.add_measurement("level_cp", cpLevel); 
   identifyCorePoints_threaded();
@@ -740,6 +743,7 @@ void SRR_LSHDBSCAN::performClustering(){
   duration_identifyingCorePoints = stop - start;
   benchStream << duration_identifyingCorePoints.count() << std::endl;
   counters.add_measurement("timing_identify cp", duration_identifyingCorePoints.count());
+  std::cout << "removing data structure" << std::endl;
   //Delete the old multi level hash tables
   for(size_t k = 0; k < levels.size(); k++){
     for(auto T: *levels[k]){

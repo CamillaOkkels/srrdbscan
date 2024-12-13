@@ -18,6 +18,7 @@ int angularHash(const point & a, const BasePoint & b);
 
 extern double epsilon;
 extern double epsilon_original;
+extern double approx;
 extern size_t minPts;
 
 enum Metric

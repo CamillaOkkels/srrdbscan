@@ -139,7 +139,7 @@ public:
     
 
     void introduceMe();
-    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes, bool benchmark, std::string benchName , size_t numberOfThreads = 2, 
+    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes, std::string benchName , size_t numberOfThreads = 2, 
         int level = -1, double shrinkageFactor=1.0); //epsilon might not be needed for the class, just set the value globally like they did
     void performClustering();
     std::ostream& getCorePoints(std::ostream&, char deli) const;

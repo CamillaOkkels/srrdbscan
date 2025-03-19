@@ -9,12 +9,11 @@ Statistics counters;
 SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_, 
                             double delta_,
                             double memoConstraint_,
-                            bool benchmark_,
                             std::string benchName,
                             size_t numberOfThreads_,
                             int level_,
                             double shrinkageFactor_):delta(delta_),memoConstraint(memoConstraint_), 
-                              numberOfThreads(numberOfThreads_) ,benchmark(benchmark_), benchStream(benchName), 
+                              numberOfThreads(numberOfThreads_), benchStream(benchName), 
                               level(level_), shrinkageFactor(shrinkageFactor_)
 {
   	for (int i = 0; i < 30; i++) {

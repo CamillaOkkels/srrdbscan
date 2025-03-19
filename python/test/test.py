@@ -13,9 +13,8 @@ minPts = 100
 srr = dbscan.SRR()
 
 labels = srr.fit_predict(X, 
-    0.9, # probability of missing a point
+    0.1, # probability of missing a point
     1, # memory constraint in GB
-    False, # benchmark?
     "test", # name of file for some default output
     1, # number of threads
     -1, # use best level dynamically

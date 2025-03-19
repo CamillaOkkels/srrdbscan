@@ -28,7 +28,6 @@ public:
         std::vector<std::vector<float>>& data,
         double delta,
         double mem_constraint,
-        bool benchmark,
         std::string benchName,
         size_t numberOfThreads = 2,
         int level=-1,
@@ -47,7 +46,7 @@ public:
         approx = approxFactor;
 
         dbscan = std::make_unique<SRR_LSHDBSCAN>(ds, delta, mem_constraint,
-            benchmark, benchName, numberOfThreads, level, shrinkageFactor);
+            benchName, numberOfThreads, level, shrinkageFactor);
 
 
         dbscan->performClustering();

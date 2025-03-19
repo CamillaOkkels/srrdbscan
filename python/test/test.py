@@ -15,13 +15,9 @@ srr = dbscan.SRR()
 labels = srr.fit_predict(X, 
     0.1, # probability of missing a point
     1, # memory constraint in GB
-    "test", # name of file for some default output
     1, # number of threads
-    -1, # use best level dynamically
-    1,  # shrinkage factor to avoid looking at all repetitions in a level
     eps, 
-    minPts, 
-    1.0) # the approximation factor
+    minPts)
 
 # print some statistics
 print(srr.statistics())

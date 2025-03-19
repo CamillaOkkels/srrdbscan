@@ -56,10 +56,7 @@ int main(int argc, char* argv[])
   SRR_LSHDBSCAN SRR_dbscan(&d,
         params.delta,
         params.memoConstraint,
-        benchName.str(),      
-        params.numberOfThreads,
-        params.level,
-        params.shrinkageFactor);
+        params.numberOfThreads);
   SRR_dbscan.introduceMe();
   
   std::cout << "Running SRR_LSH clustering" << std::endl;

@@ -28,13 +28,9 @@ public:
         std::vector<std::vector<float>>& data,
         double delta,
         double mem_constraint,
-        std::string benchName,
         size_t numberOfThreads = 2,
-        int level=-1,
-        double shrinkageFactor=1.0,
         double epsilon_=1.0,
-        int minPts_=100,
-        double approxFactor = 1.0f
+        int minPts_=100
     ) {
         std::vector<int> labels;
         ds = new dataset();
@@ -43,10 +39,9 @@ public:
         epsilon_original = epsilon_;
         epsilon = epsilon_ * epsilon_;
         minPts = minPts_;
-        approx = approxFactor;
 
         dbscan = std::make_unique<SRR_LSHDBSCAN>(ds, delta, mem_constraint,
-            benchName, numberOfThreads, level, shrinkageFactor);
+            numberOfThreads);
 
 
         dbscan->performClustering();

@@ -9,7 +9,6 @@
 #include <chrono>
 #include <globals.h>
 #include <cassert>
-//#include <highfive/H5File.hpp>
 
 extern Statistics counters;
 
@@ -61,12 +60,9 @@ private:
     dataset* ds = NULL;
     double memoConstraint = 0.0; //Giga bytes
     double delta = 0.1; // between 0.0 and 0.5
-    int level = -1; // fix the level? -1 means unfixed.
-    double shrinkageFactor = 1.0;
-    const bool benchmark = false;
     
     //Constructed at runtime
-    double p1 = 0.0, p2 = 0.0;
+    double p1 = 0.0;
     
     size_t maxDepth = 0;
     size_t EFP = 1; //Expected number of far away points for choosing lowest level  
@@ -113,13 +109,6 @@ private:
     std::chrono::duration<double> duration_Merging;
     std::chrono::duration<double> duration_relabelingData;
 
-    
-    
-//Depricated
-size_t maxLevel(double p2);  // Find largest k such that reps(k) <= L
-                                //I need to know the sensitivy before finding this value is possible
-    
-
 public:
     std::vector<PopulationTask> populationTasks; //the different buckets over all levels, that the threads have to populate
     std::vector<RangeTask> cpIdentifycationTasks;
@@ -139,8 +128,7 @@ public:
     
 
     void introduceMe();
-    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes, std::string benchName , size_t numberOfThreads = 2, 
-        int level = -1, double shrinkageFactor=1.0); //epsilon might not be needed for the class, just set the value globally like they did
+    SRR_LSHDBSCAN(dataset *ds, double delta, double GBytes,  size_t numberOfThreads = 2); 
     void performClustering();
     std::ostream& getCorePoints(std::ostream&, char deli) const;
     std::ostream& getLabels(std::ostream&, char deli) const;

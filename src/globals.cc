@@ -56,67 +56,6 @@ int angularHash(const point & a, const BasePoint & b)
   return (a.innerProduct(b) >= 0 ? 1.0 : -1.0);
 }
 
-void parseTheArguments(int argc, char* argv[], Parameters& params)
-{
-  int opt;
-
-  while ( (opt=getopt(argc, argv, "am:e:t:f:L:M:b:")) != -1  )
-    {
-      switch(opt)
-	{
-	case 'a':
-	  metric = angular;
-	  hashFunc = angularHash;
-	  distanceFunc = angularDistance;
-	  break;
-	case 'm':
-	  minPts = std::stoi(optarg);
-	  break;
-	case 'e':
-	  epsilon_original = std::stod(optarg);
-	  epsilon = epsilon_original * epsilon_original;
-	  break;
-	case 't':
-	  params.numberOfThreads = std::stoi(optarg);
-	  break;
-	case 'f':
-	  params.fileName = std::string(optarg);
-	  break;
-	case 'L':
-	  params.numberOfHashTables = std::stoi(optarg);
-	  break;
-	case 'M':
-	  params.numberOfHyperplanesPerTable = std::stoi(optarg);
-	  break;
-	case 'b':
-	  params.baselineFileName = std::string(optarg);
-	  break;
-	default:
-	  std::cout << "Usage: " << argv[0] << " "
-		    << "-f inputFile "
-		    << "[-L #HashTables] "
-		    << "[-M #HyperPlanesPerHashTable] "
-		    << "[-t #threads] "
-		    << "[-e eps] " 
-		    << "[-m minPts] "
-		    << "[-a angularDistance] "
-		    << "[-b baselineClusteringFile]"
-		    << std::endl;
-
-	  exit(EXIT_FAILURE);
-	}
-    }
-  if (params.fileName.empty())
-    {
-      std::cerr << "-f inputFile is mandatory" << std::endl;
-      exit(EXIT_FAILURE);
-    }
-  if (metric == euclidean)
-    {
-      epsilon = epsilon_original * epsilon_original;
-      distanceFunc = squaredEuclideanDistance;
-    }
-}
 
 void parseSRRArguments(int argc, char* argv[], SRRParameters& params)
 {

@@ -9,12 +9,8 @@ Statistics counters;
 SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_, 
                             double delta_,
                             double memoConstraint_,
-                            std::string benchName,
-                            size_t numberOfThreads_,
-                            int level_,
-                            double shrinkageFactor_):delta(delta_),memoConstraint(memoConstraint_), 
-                              numberOfThreads(numberOfThreads_), benchStream(benchName), 
-                              level(level_), shrinkageFactor(shrinkageFactor_)
+                            size_t numberOfThreads_):delta(delta_),memoConstraint(memoConstraint_), 
+                            numberOfThreads(numberOfThreads_)
 {
   	for (int i = 0; i < 30; i++) {
 		  HASH.push_back(gen.getHashCoeff());
@@ -29,7 +25,7 @@ SRR_LSHDBSCAN::SRR_LSHDBSCAN(dataset *ds_,
     //std::cerr << "depth: " << maxDepth << std::endl;
     initLevels();
     size_t numPoints = ds->points.size();
-    std::cerr << "data points " << numPoints << std::endl;
+    std::cerr << "Clustering " << numPoints << " data points with (eps=" << epsilon_original << ", minPts=" << minPts << ")" << std::endl;
     size_t noBatches = 100;
     assert(numPoints>= noBatches);
     size_t stepsize = (numPoints + noBatches - 1) / noBatches; //ceil  
@@ -67,39 +63,26 @@ void SRR_LSHDBSCAN::setDataset(dataset* d)
 
 double SRR_LSHDBSCAN::memoCost(size_t limit){
   double hashCost = ((1 - std::pow(1/p1, limit+1.0)) / (1.0 - 1/p1));
-  std::cout << "hashCost: " << hashCost << std::endl;
+  // std::cout << "hashCost: " << hashCost << std::endl;
   double r_ = 1.0/p1; // current this is the same as e as (e^-1)^-1 = e. However, this is more future proof as if we decide to normalise differently in the hashfunctions.
   double HPCost = ((r_ - (limit+1) * std::pow(M_E, limit+1) + limit * std::pow(M_E, limit + 2))/pow(1-M_E, 2));
   double total_cost = ((4 * ds->points.size() * std::log(1/delta) * hashCost) /1e9) + ((8 * std::log(1/delta)* HPCost)  / 1e9); 
-  std::cerr << "level: " << limit << " cost: " << total_cost << std::endl;
+  // std::cerr << "level: " << limit << " cost: " << total_cost << std::endl;
   //std::cerr << "\t hashCost: " << hashCost << " HPCost: " << HPCost << std::endl;
   return total_cost;
 }
 
 //This should not be done in K_max rounds
 void SRR_LSHDBSCAN::setParams(){
-    p1 = .8; //1/M_E; //.8 is setting for 4 * epsilon choice.
-    p2 = 0.0; //This values does not really matter until we care what the approximation factor(C) is.  
+    p1 = .8; //.8 is setting for 4 * epsilon choice.
     size_t K_max = 0; 
 
     while(memoCost(K_max) < memoConstraint){
-        std::cerr << "Level: " << K_max << " Cost: " << memoCost(K_max) << std::endl;
+        // std::cerr << "Level: " << K_max << " Cost: " << memoCost(K_max) << std::endl;
         HashTable ht(ds, K_max, &gen);
         ht.populateHashTable();
         if (K_max > 3 && ht.hashTable.size() > .2 * ds->points.size()) {
           std::cerr << "not building more levels since buckets are too small" << std::endl;
-          // std::cerr << "average number of points in buckets: " << ds->points.size() / (double) ht.hashTable.size() << std::endl;
-          // std::vector<long> vec; 
-          // long max = 0;
-          // for (auto& [k, v]: ht.hashTable) {
-          //   vec.push_back(v.size());
-          //   if (max < v.size()) {
-          //     max = v.size();
-          //   }
-          // }
-          // std::sort(vec.begin(), vec.end());
-          // std::cerr << "max keys in bucket: " << max << std::endl;
-          // std::cerr << "90% bucket size: " << vec[.9 * vec.size()] << std::endl;
           break;
         }
         K_max++;
@@ -112,27 +95,26 @@ void SRR_LSHDBSCAN::setParams(){
 
 
 void SRR_LSHDBSCAN::initLevels(){
-  std::cerr << "initting levels" << std::endl;
+  // std::cerr << "initting levels" << std::endl;
   for(size_t k = 0; k <= maxDepth; k++){
-    std::cerr << shrinkageFactor << std::endl;
-    size_t repetitions = ceil(reps(k) * log(1/delta) * shrinkageFactor);
+    size_t repetitions = ceil(reps(k) * log(1/delta));
     if(k == 0) repetitions = 1;
-    std::cerr << k  << " " << reps(k) << " " << log(1/delta) << " " << repetitions; 
+    // std::cerr << k  << " " << reps(k) << " " << log(1/delta) << " " << repetitions; 
     std::vector<HashTable*> *levelK = new std::vector<HashTable*>();
     for(size_t T = 0; T < repetitions; T++){
       levelK->push_back(new HashTable(ds, k, &gen));
       populationTasks.emplace_back(*(levelK->back()));
     }
-    std::cerr << " " << levelK->size() << std::endl;
+    // std::cerr << " " << levelK->size() << std::endl;
     levels.push_back(levelK);
-    std::cerr << "Done with level: " << k << " with reps(level): " << repetitions << std::endl; 
+    // std::cerr << "Done with level: " << k << " with reps(level): " << repetitions << std::endl; 
   }
 }
 
 void SRR_LSHDBSCAN::initLevelsCorePoints(){
   //std::cerr << "initting levels" << std::endl;
   for(size_t k = 0; k <= maxDepth; k++){
-    size_t repetitions = ceil(reps(k) * log(1/delta) * shrinkageFactor);
+    size_t repetitions = ceil(reps(k) * log(1/delta));
     if(k == 0) repetitions = 1;
       //std::cerr << k  << " " << reps(k) << " " << log(1/delta) << " " << repetitions; 
       std::vector<HashTable*> *levelK = new std::vector<HashTable*>();
@@ -158,7 +140,7 @@ void SRR_LSHDBSCAN::populateHashTables(){
 void SRR_LSHDBSCAN::populateHashTables_threaded()
 {
   benchStream << "Populating the concurrent way! \t"; // << std::endl;
-  std::cout << "Populating the hash tables!" << std::endl;
+  // std::cout << "Populating the hash tables!" << std::endl;
 
   for (size_t threadID = 0; threadID < numberOfThreads; ++threadID)
     {
@@ -311,10 +293,9 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
           //Performs the CP identityfication for each point that the thread is responsible for.
           point p = *iter;
           result_set.insert(&p);
-          int bestK = input->level;
-          if (bestK == -1) {
-            bestK = input->cpLevel;
-          } 
+
+          size_t bestK = input->cpLevel;
+
           long comparisons = 0;
           long truepoints = 0;
           //std::cout << "identification on level " << bestK << std::endl;
@@ -349,10 +330,10 @@ void* SRR_LSHDBSCAN::cpIdentifycation_thread(void* inputArg){
 #ifdef SRR_PERFORMANCE
           std::cout << "carried out " << comparisons << " comparisons on level " << bestK << " and found " << truepoints << " passing points. Resulted in " << result_set.size() << " points." << std::endl;
 #endif
-          g_finished++;
-          if (g_finished % 10000 == 0) {
-            std::cout << "finished roughly " << g_finished << " points" << std::endl;          
-          }
+          // g_finished++;
+          // if (g_finished % 10000 == 0) {
+          //   std::cout << "finished roughly " << g_finished << " points" << std::endl;          
+          // }
           if(0 < result_set.size() && result_set.size() < minPts){
             input->possibleBorderPoints.push_back(&(*iter));
           }
@@ -601,7 +582,7 @@ void SRR_LSHDBSCAN::getWork(std::ostream& stream,char deli){ // this function is
   populateHashTables_threaded();
   populationTasks.clear(); 
   
-  std::cout << "done populating hashtables" << std::endl;
+  // std::cout << "done populating hashtables" << std::endl;
   
   for(auto p: ds->points){
     getWorkPoint(stream,deli,p) << std::endl; 
@@ -725,24 +706,18 @@ void SRR_LSHDBSCAN::performClustering(){
   benchStream << duration_populatingHashTables.count() << std::endl;
   counters.add_measurement("timing_build ht", duration_populatingHashTables.count());
 
-  std::cout << "Writing statistics about work" << std::endl;
-  //getWork("test.hdf5");
-  std::cout << "done writing statistics" << std::endl;
-
   benchStream << "Identifying core points:  " << std::flush; 
   start = std::chrono::steady_clock::now();
-  //identifyCorePoints();a
-  std::cout << "finding level for cp identification" << std::endl;
+
   cpLevel = findCPIdentificationLevel();
-  std::cout << "found level for cp identification" << std::endl;
-  std::cout << "best level is " << cpLevel;
+  // std::cout << "found level for cp identification" << std::endl;
+  // std::cout << "best level is " << cpLevel;
   counters.add_measurement("level_cp", cpLevel); 
   identifyCorePoints_threaded();
   stop  = std::chrono::steady_clock::now();
   duration_identifyingCorePoints = stop - start;
   benchStream << duration_identifyingCorePoints.count() << std::endl;
   counters.add_measurement("timing_identify cp", duration_identifyingCorePoints.count());
-  std::cout << "removing data structure" << std::endl;
   //Delete the old multi level hash tables
   for(size_t k = 0; k < levels.size(); k++){
     for(auto T: *levels[k]){
@@ -800,14 +775,8 @@ void SRR_LSHDBSCAN::performClustering(){
 
     benchStream << "Merging: ";
     start = std::chrono::steady_clock::now(); 
-    size_t CPMergelevel;
-    if (level != -1) {
-      std::cout << "Using fixed level " << level << std::endl;
-      CPMergelevel = level;
-    } else {
-      CPMergelevel = findCPMergingLevel(); 
-      std::cout << "Merging on level " << CPMergelevel << std::endl;
-    }
+    size_t CPMergelevel = findCPMergingLevel(); 
+    // std::cout << "Merging on level " << CPMergelevel << std::endl;
     counters.add_measurement("level_merge", CPMergelevel); 
     CPMergingTasks.reserve(reps(CPMergelevel)); 
     for(auto table = (*levels[CPMergelevel]).begin(); table != (*levels[CPMergelevel]).end(); table++){
@@ -829,8 +798,3 @@ void SRR_LSHDBSCAN::performClustering(){
   benchStream << "Total: " << (stop - total_start).count() / 1e9 << std::endl;
   counters.add_measurement("timing_total", (stop - total_start).count() / 1e9);
 }
-
-//Depricated
-size_t SRR_LSHDBSCAN::maxLevel(double P2_Tmp){
-  return std::ceil(std::log(1.0 * minPts/ds->points.size())/std::log(P2_Tmp));
-} 
